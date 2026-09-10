@@ -1,0 +1,35 @@
+openapi: 3.0.3
+info: {title: M2 fixture, version: '1'}
+paths:
+  /removed:
+    get:
+      responses: {'200': {description: OK}}
+  /methods:
+    get:
+      responses: {'200': {description: OK}}
+    post:
+      responses: {'200': {description: OK}}
+  /orders:
+    post:
+      parameters:
+        - {name: status, in: query, required: false, schema: {type: string}}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                legacy: {type: string}
+                amount: {type: number}
+                state: {type: string, nullable: true, enum: [pending, paid]}
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  receipt_url: {type: string}
+                  id: {type: integer}
+                  state: {type: string, nullable: true, enum: [pending, paid]}

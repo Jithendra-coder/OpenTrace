@@ -1,0 +1,28 @@
+info:
+  version: "1.0.0"
+  title: Equivalence API
+components:
+  schemas:
+    Widget:
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+        - id
+      type: object
+paths:
+  /widgets:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Widget"
+        required: true
+      responses:
+        "201":
+          description: Created
+      operationId: createWidget
+openapi: 3.1.0

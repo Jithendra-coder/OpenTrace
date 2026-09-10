@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  opentrace:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: opentrace:latest
+    container_name: opentrace-dashboard
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENTRACE_WORKSPACE=/app/workspace
+      - OPENTRACE_WORKSPACE=/app/workspace
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+    volumes:
+      - ./data:/app/data
+      - tmp-volume:/tmp
+      - .:/app/workspace
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=512m
+
+volumes:
+  tmp-volume:

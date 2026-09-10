@@ -1,0 +1,39 @@
+{
+  "ai_enabled": false,
+  "failure": null,
+  "generation_status": "GENERATED",
+  "new_spec": "C:\\Users\\JITHU\\OneDrive\\Desktop\\ChangeMesh\\Real Testing Done\\test-project\\api\\openapi-v2.yaml",
+  "old_spec": "C:\\Users\\JITHU\\OneDrive\\Desktop\\ChangeMesh\\Real Testing Done\\test-project\\api\\openapi-v1.yaml",
+  "patch": {
+    "edits": [
+      {
+        "end_line": 27,
+        "expected_original_text": "        \"amount\": amount,\n",
+        "file": "payment_service.py",
+        "id": "proposed-edit-f1ebd5c2e5081d0b8036b2ef",
+        "original_text_hash": "a712bfae778b204c9b0eebdac3df0e95ff0a45a543e390e65cbdd260c8e302e5",
+        "reason": "Minimal bounded candidate based only on the supplied context item.",
+        "replacement_text": "",
+        "start_line": 26,
+        "symbol": "payment_service.py::create_payment"
+      }
+    ],
+    "explanation": "Generated candidate only; it has not been applied or validated.",
+    "generation_fingerprint": "dc5c97bcbb5634faea1f9cd91b2c7f675508cabd6b72a94cdc9673c45c4a682b",
+    "id": "proposed-patch-35ed4ddc542fe26e9e4c2de7",
+    "model_id": "small-model",
+    "provider_adapter_id": "deterministic-fake-v1",
+    "selected_strategy": "SMALL",
+    "warnings": [
+      "Candidate is unvalidated and was not applied to any repository."
+    ]
+  },
+  "policy": "balanced",
+  "repo": "C:\\Users\\JITHU\\OneDrive\\Desktop\\ChangeMesh\\Real Testing Done\\test-project\\src",
+  "routing_decision_id": "cli-balanced-decision",
+  "schema_version": "migration-plan-v1",
+  "selected_strategy": "SMALL",
+  "warnings": [
+    "Candidate generated only; it has not been applied or validated."
+  ]
+}

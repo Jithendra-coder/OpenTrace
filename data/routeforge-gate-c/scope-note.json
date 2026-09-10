@@ -1,0 +1,10 @@
+{
+  "formal_test_outcome_diversity": {
+    "status": "NOT DEMONSTRATED",
+    "reason": "The fresh formal TEST partition contains one preferred outcome class (NO_FEASIBLE_STRATEGY); ROC-AUC and PR-AUC are therefore not valid on that partition.",
+    "test_group_count": 12,
+    "preserved_without_tuning": true
+  },
+  "provider_independence": true,
+  "gate_c_approval": "NOT_GRANTED"
+}

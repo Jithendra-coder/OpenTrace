@@ -1,0 +1,148 @@
+"""PR body template builder for OpenTrace draft pull requests."""
+
+from __future__ import annotations
+
+from opentrace.github.client import _NEVER_AUTOMERGE_NOTE
+
+
+def build_pr_title(changes: list[dict], patch_data: dict) -> str:
+    """Build a concise PR title from the analysis and patch data."""
+    change_count = len(changes)
+    strategy = patch_data.get("selected_strategy", "UNKNOWN")
+    if change_count == 1:
+        c = changes[0]
+        method = c.get("method", "").upper()
+        path = c.get("path", "")
+        return f"[OpenTrace] Migrate {method} {path} — {strategy} strategy"
+    return f"[OpenTrace] Migrate {change_count} API changes — {strategy} strategy"
+
+
+def build_pr_body(
+    analysis: dict,
+    plan: dict,
+    validation: dict | None,
+    patch_data: dict,
+    commit_sha: str,
+    branch: str,
+) -> str:
+    """Build the full draft PR description."""
+    lines: list[str] = []
+
+    lines.append(_NEVER_AUTOMERGE_NOTE)
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("## OpenTrace Migration Report")
+    lines.append("")
+
+    # API changes
+    changes = analysis.get("changes", [])
+    lines.append(f"### API Changes Detected ({len(changes)})")
+    lines.append("")
+    for i, c in enumerate(changes, 1):
+        method = c.get("method", "").upper()
+        path = c.get("path", "")
+        field = c.get("field", "")
+        change_type = c.get("change_type", "BREAKING")
+        lines.append(f"{i}. **{method} {path}** — `{change_type}`")
+        if field:
+            lines.append(f"   - Removed field: `{field}`")
+    lines.append("")
+
+    # Affected code
+    direct = analysis.get("direct_count", 0)
+    indirect = analysis.get("indirect_count", 0)
+    lines.append(f"### Affected Code")
+    lines.append("")
+    lines.append(f"- Direct impacts: **{direct}**")
+    lines.append(f"- Indirect impacts: **{indirect}**")
+    lines.append("")
+
+    # Migration strategy
+    strategy = patch_data.get("selected_strategy", "?")
+    provider = patch_data.get("provider_adapter_id", "?")
+    model = patch_data.get("model_id", "?")
+    edits = patch_data.get("edits", [])
+    lines.append(f"### Migration Strategy")
+    lines.append("")
+    lines.append(f"- Strategy: `{strategy}`")
+    lines.append(f"- Provider: `{provider}`")
+    lines.append(f"- Model: `{model}`")
+    lines.append(f"- Edits: {len(edits)}")
+    lines.append("")
+
+    # Files modified
+    lines.append("### Files Modified")
+    lines.append("")
+    for edit in edits:
+        file = edit.get("file", "?")
+        reason = edit.get("reason", "")
+        symbol = edit.get("symbol", "")
+        sym_str = f" (`{symbol}`)" if symbol else ""
+        lines.append(f"- `{file}`{sym_str}")
+        if reason:
+            lines.append(f"  - {reason}")
+    lines.append("")
+
+    # Validation evidence
+    lines.append("### Validation Evidence")
+    lines.append("")
+    if validation:
+        status = validation.get("status", "UNKNOWN")
+        passed = validation.get("tests_passed")
+        failed = validation.get("tests_failed")
+        duration = validation.get("duration_ms")
+        patch_applied = validation.get("patch_applied", False)
+        syntax_ok = validation.get("syntax_ok")
+
+        lines.append(f"| Field | Value |")
+        lines.append(f"|---|---|")
+        lines.append(f"| Status | `{status}` |")
+        lines.append(f"| Patch applied | {'✓' if patch_applied else '✗'} |")
+        lines.append(f"| Syntax OK | {'✓' if syntax_ok else '✗' if syntax_ok is False else 'N/A'} |")
+        if passed is not None:
+            lines.append(f"| Tests passed | {passed} |")
+        if failed is not None:
+            lines.append(f"| Tests failed | {failed} |")
+        if duration is not None:
+            lines.append(f"| Duration | {duration}ms |")
+
+        limitations = validation.get("limitations", [])
+        if limitations:
+            lines.append("")
+            lines.append("> **Note:** " + limitations[0])
+    else:
+        lines.append("_Validation was not run before this PR was opened._")
+    lines.append("")
+
+    # Patch explanation
+    explanation = patch_data.get("explanation", "")
+    if explanation:
+        lines.append("### Patch Explanation")
+        lines.append("")
+        lines.append(explanation)
+        lines.append("")
+
+    # Warnings
+    warnings = patch_data.get("warnings", []) + plan.get("warnings", [])
+    if warnings:
+        lines.append("### Warnings")
+        lines.append("")
+        for w in warnings:
+            lines.append(f"- ⚠️ {w}")
+        lines.append("")
+
+    # Audit trail
+    lines.append("### Audit Trail")
+    lines.append("")
+    lines.append(f"- Branch: `{branch}`")
+    lines.append(f"- Commit: `{commit_sha[:12]}`")
+    lines.append(f"- Patch ID: `{patch_data.get('id', '?')}`")
+    lines.append(f"- Generation fingerprint: `{patch_data.get('generation_fingerprint', '?')}`")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("*Generated by [OpenTrace](https://github.com/your-org/opentrace). "
+                 "This PR requires human review before merging.*")
+
+    return "\n".join(lines)

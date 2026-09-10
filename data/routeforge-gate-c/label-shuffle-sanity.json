@@ -1,0 +1,1 @@
+{"metrics":{"eligible_rows":41,"f1":0.3125,"failure_rows":28,"pr_auc":0.3034165423417005,"precision":0.2631578947368421,"recall":0.38461538461538464,"roc_auc":0.4478021978021978,"score_terminology":"uncalibrated oracle-success score","score_threshold":0.0,"success_rows":13},"seed":2304,"test_accessed":false,"train_rows":119,"validation_rows":41}

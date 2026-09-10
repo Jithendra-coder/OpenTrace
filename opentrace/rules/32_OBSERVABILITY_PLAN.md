@@ -1,0 +1,5 @@
+# Observability Plan
+
+Emit structured, redacted events keyed by analysis/job/task/artifact ids: stage start/finish, duration, input/config versions, counts, resolution distributions, warnings/errors, cache/invalidation status, routing/validation outcomes, provider usage/latency/cost when available, and security-relevant audit actions. Eventual metric names include `analysis_duration_seconds`, `files_scanned`, `files_reused`, `ast_parse_failures`, `api_changes_detected`, `impact_candidates`, `impact_predictions`, `routing_decisions`, `ai_requests`, `ai_input_tokens`, `ai_output_tokens`, `ai_cost`, `validation_attempts`, `validation_successes`, and `worker_failures`. Never log raw repository source, secrets, full prompts or patches by default.
+
+Metrics and traces must distinguish actual results from unavailable measurements. Dashboards/alerts are later productization and require thresholds based on measured baselines. Preserve enough provenance to reproduce a result while respecting retention/deletion policy.

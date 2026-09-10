@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Outer Gear with 12 teeth -->
+  <path d="M 54 10 L 66 10 L 68 18 C 72 19.5 75.8 21.5 79.2 24 L 87 18.5 L 95.5 27 L 90 34.8 C 92.5 38.2 94.5 42 96 46 L 104 48 L 104 60 L 96 62 C 94.5 66 92.5 69.8 90 73.2 L 95.5 81 L 87 89.5 L 79.2 84 C 75.8 86.5 72 88.5 68 90 L 66 98 L 54 98 L 52 90 C 48 88.5 44.2 86.5 40.8 84 L 33 89.5 L 24.5 81 L 30 73.2 C 27.5 69.8 25.5 66 24 62 L 16 60 L 16 48 L 24 46 C 25.5 42 27.5 38.2 30 34.8 L 24.5 27 L 33 18.5 L 40.8 24 C 44.2 21.5 48 19.5 52 18 Z" />
+
+  <!-- Inner Circle -->
+  <circle cx="60" cy="54" r="32" stroke-width="2.5" />
+
+  <!-- Upper Plug -->
+  <!-- Wire from circle left to top plug -->
+  <path d="M 33 46 C 33 30 48 27 55 36" stroke-width="2.5" />
+  <!-- Top plug dome -->
+  <path d="M 48 40 C 48 33 62 33 62 40 Z" fill="currentColor" fill-opacity="0.08" />
+  <line x1="46" y1="40" x2="64" y2="40" stroke-width="3" />
+  <!-- Upper Prongs -->
+  <line x1="51" y1="40" x2="51" y2="47" stroke-width="2.5" />
+  <line x1="59" y1="40" x2="59" y2="47" stroke-width="2.5" />
+
+  <!-- Lower Socket / Plug -->
+  <!-- Socket Base Line -->
+  <line x1="46" y1="53" x2="64" y2="53" stroke-width="3" />
+  <!-- Bottom plug dome -->
+  <path d="M 48 53 C 48 60 62 60 62 53 Z" fill="currentColor" fill-opacity="0.08" />
+  <!-- Wire from bottom plug to circle right -->
+  <path d="M 55 57 C 55 67 72 73 87 62" stroke-width="2.5" />
+</svg>

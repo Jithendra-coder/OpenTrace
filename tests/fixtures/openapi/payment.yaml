@@ -1,0 +1,115 @@
+openapi: 3.0.3
+info:
+  title: Payment API
+  version: "1.0.0"
+servers:
+  - url: https://api.example.test/v1
+security:
+  - bearerAuth: [payments:write]
+paths:
+  /payments/{payment_id}:
+    summary: Fetch or update a payment
+    parameters:
+      - name: payment_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: expand
+        in: query
+        required: false
+        schema:
+          type: boolean
+    get:
+      operationId: getPayment
+      tags: [payments]
+      responses:
+        "200":
+          description: Payment
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+            application/problem+json: {}
+        default:
+          $ref: "#/components/responses/Error"
+    patch:
+      operationId: updatePayment
+      security:
+        - bearerAuth: [payments:write]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentUpdate"
+      responses:
+        "204":
+          description: Updated
+components:
+  schemas:
+    Payment:
+      type: object
+      required: [amount, status]
+      properties:
+        amount:
+          type: number
+          format: double
+        status:
+          type: string
+          enum: [pending, paid, failed]
+        tags:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          additionalProperties:
+            type: string
+    PaymentUpdate:
+      allOf:
+        - $ref: "#/components/schemas/Payment"
+        - type: object
+          properties:
+            note:
+              type: [string, "null"]
+    PaymentChoice:
+      oneOf:
+        - type: string
+        - type: integer
+    PaymentEither:
+      anyOf:
+        - type: string
+        - type: boolean
+  parameters:
+    Locale:
+      name: locale
+      in: header
+      schema:
+        type: string
+  responses:
+    Error:
+      description: Error response
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+  requestBodies:
+    PaymentRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Payment"
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

@@ -1,0 +1,53 @@
+name: 'ChangeMesh — Automated API Change Impact & Migration Engine'
+description: 'Automatically detects breaking OpenAPI changes, traces code blast radius, and validates migrations in sandbox.'
+author: 'ChangeMesh Team'
+
+inputs:
+  old-spec:
+    description: 'Path to old OpenAPI spec file (YAML or JSON)'
+    required: true
+  new-spec:
+    description: 'Path to new OpenAPI spec file (YAML or JSON)'
+    required: true
+  repo:
+    description: 'Path to code repository to scan'
+    required: false
+    default: '.'
+  policy:
+    description: 'Migration policy (balanced, economy, critical)'
+    required: false
+    default: 'balanced'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install ChangeMesh
+      shell: bash
+      run: |
+        pip install -e .
+        pip install pytest
+
+    - name: Run ChangeMesh Analysis
+      shell: bash
+      run: |
+        changemesh analyze --old "${{ inputs.old-spec }}" --new "${{ inputs.new-spec }}" --repo "${{ inputs.repo }}"
+
+    - name: Run Migration Planning
+      shell: bash
+      run: |
+        changemesh migrate --policy "${{ inputs.policy }}"
+
+    - name: Run Sandbox Validation
+      shell: bash
+      run: |
+        changemesh validate
+
+    - name: Workspace Status Check
+      shell: bash
+      run: |
+        changemesh status

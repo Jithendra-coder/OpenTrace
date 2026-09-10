@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OpenTrace — API Change Intelligence &amp; Migration Engine</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+
+  <!-- Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CDN with Noir Design Tokens -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['JetBrains Mono', 'Menlo', 'monospace'],
+          },
+          colors: {
+            noir: {
+              black: '#000000',
+              white: '#FFFFFF',
+              50:  '#FAFAFA',
+              100: '#F4F4F5',
+              200: '#E4E4E7',
+              300: '#D4D4D8',
+              400: '#A1A1AA',
+              500: '#71717A',
+              600: '#52525B',
+              700: '#3F3F46',
+              800: '#27272A',
+              900: '#18181B',
+              950: '#0B0F14',
+            }
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.15s ease-out',
+            'slide-up': 'slideUp 0.18s ease-out',
+            'shimmer': 'shimmer 1.5s infinite linear',
+          },
+          keyframes: {
+            fadeIn:  { from: { opacity: 0 }, to: { opacity: 1 } },
+            slideUp: { from: { opacity: 0, transform: 'translateY(6px)' }, to: { opacity: 1, transform: 'translateY(0)' } },
+            shimmer: { from: { backgroundPosition: '-400px 0' }, to: { backgroundPosition: '400px 0' } },
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* ─── Noir Design System CSS ─────────────────────────────────────────── */
+    * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: #FFFFFF; color: #000000; }
+
+    /* Sidebar nav item */
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: #71717A;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      user-select: none;
+    }
+    .nav-item:hover {
+      background: #F4F4F5;
+      color: #000000;
+    }
+    .nav-item.active {
+      background: #F4F4F5;
+      color: #000000;
+      font-weight: 600;
+    }
+    .nav-item svg { flex-shrink: 0; }
+
+    /* Shimmer skeleton */
+    .skeleton {
+      background: linear-gradient(90deg, #F4F4F5 25%, #E4E4E7 50%, #F4F4F5 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.5s infinite linear;
+      border-radius: 6px;
+    }
+
+    /* Diff viewer */
+    .diff-line-add { background: #ECFDF5; color: #065F46; }
+    .diff-line-del { background: #FEF2F2; color: #991B1B; }
+
+    /* Simulator cards */
+    .sim-api-card {
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid #E4E4E7;
+      background: #FFFFFF;
+      border-radius: 12px;
+    }
+    .sim-api-card:hover {
+      border-color: #A1A1AA;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+      transform: translateY(-1px);
+    }
+    .sim-api-card.active {
+      border-color: #000000;
+      background: #FAFAFA;
+      box-shadow: 0 0 0 1.5px #000000;
+    }
+
+    /* Badge */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      padding: 2.5px 8px;
+      border-radius: 6px;
+    }
+
+    /* Card */
+    .card {
+      background: #FFFFFF;
+      border: 1px solid #E4E4E7;
+      border-radius: 12px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+
+    /* Stat card 4-accent indicators */
+    .stat-red    { border-top: 3px solid #EF4444; }
+    .stat-amber  { border-top: 3px solid #F59E0B; }
+    .stat-green  { border-top: 3px solid #10B981; }
+    .stat-slate  { border-top: 3px solid #18181B; }
+
+    /* Toast */
+    #toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+    .toast {
+      padding: 12px 18px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 500;
+      background: #000000;
+      color: #FFFFFF;
+      border: 1px solid #27272A;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      animation: slide-up 0.18s ease-out;
+    }
+
+    /* Table */
+    table { border-collapse: collapse; width: 100%; }
+    thead tr { border-bottom: 1px solid #E4E4E7; background: #FAFAFA; }
+    tbody tr { border-bottom: 1px solid #F4F4F5; transition: background 0.1s; }
+    tbody tr:hover { background: #FAFAFA; }
+    th { font-size: 11px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #71717A; padding: 11px 16px; text-align: left; }
+    td { font-size: 13.5px; color: #18181B; padding: 12px 16px; }
+
+    /* Checklist */
+    .check-item { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #F4F4F5; font-size: 13.5px; }
+    .check-item:last-child { border-bottom: none; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #D4D4D8; border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: #A1A1AA; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.12s ease;
+      border: 1px solid transparent;
+      outline: none;
+      user-select: none;
+    }
+    .btn-primary {
+      background: #000000;
+      color: #FFFFFF;
+      border-color: #000000;
+    }
+    .btn-primary:hover {
+      background: #18181B;
+      border-color: #18181B;
+    }
+    .btn-primary:active {
+      background: #27272A;
+      transform: scale(0.99);
+    }
+    .btn-primary:disabled {
+      background: #D4D4D8;
+      border-color: #D4D4D8;
+      color: #71717A;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .btn-secondary {
+      background: #F4F4F5;
+      color: #18181B;
+      border-color: #E4E4E7;
+    }
+    .btn-secondary:hover {
+      background: #E4E4E7;
+      color: #000000;
+    }
+    .btn-secondary:active {
+      background: #D4D4D8;
+    }
+    .btn-outline {
+      background: transparent;
+      color: #18181B;
+      border-color: #D4D4D8;
+    }
+    .btn-outline:hover {
+      background: #F4F4F5;
+    }
+    .btn-danger {
+      background: #FEF2F2;
+      color: #DC2626;
+      border-color: #FECACA;
+    }
+    .btn-danger:hover {
+      background: #FEE2E2;
+    }
+
+    /* Inputs */
+    .input {
+      width: 100%;
+      padding: 8.5px 13px;
+      border-radius: 8px;
+      border: 1px solid #D4D4D8;
+      font-size: 13px;
+      color: #000000;
+      background: #FFFFFF;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.12s, box-shadow 0.12s;
+    }
+    .input:focus {
+      border-color: #000000;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.06);
+    }
+    .input::placeholder { color: #A1A1AA; }
+
+    /* Label */
+    .form-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    /* Select */
+    .select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717A' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+
+    /* Policy Radio Options (Noir Monochrome) */
+    .policy-option {
+      display: flex;
+      flex-direction: column;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1.5px solid #E4E4E7;
+      background: #FFFFFF;
+      cursor: pointer;
+      transition: all 0.12s ease-in-out;
+      user-select: none;
+    }
+    .policy-option:hover {
+      border-color: #A1A1AA;
+      background: #FAFAFA;
+    }
+    .policy-option:has(input[type="radio"]:checked) {
+      border-color: #000000 !important;
+      background: #F4F4F5 !important;
+      box-shadow: 0 0 0 1px #000000 !important;
+    }
+    .policy-option:has(input[type="radio"]:checked) .policy-title {
+      color: #000000 !important;
+      font-weight: 700 !important;
+    }
+    .policy-option:has(input[type="radio"]:checked) .policy-desc {
+      color: #52525B !important;
+    }
+  </style>
+</head>
+
+<body class="h-full flex overflow-hidden bg-white text-black">
+
+  <!-- ─── Sidebar ─────────────────────────────────────────── -->
+  <aside class="w-60 flex-shrink-0 h-screen flex flex-col bg-white border-r border-neutral-200">
+
+    <!-- Logo & Brand Header -->
+    <div class="px-5 pt-6 pb-3">
+      <div class="flex items-center gap-2.5">
+        <!-- Official API Gear + Plug Logo SVG -->
+        <div class="w-7 h-7 flex-shrink-0 text-black">
+          <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full">
+            <path d="M 54 10 L 66 10 L 68 18 C 72 19.5 75.8 21.5 79.2 24 L 87 18.5 L 95.5 27 L 90 34.8 C 92.5 38.2 94.5 42 96 46 L 104 48 L 104 60 L 96 62 C 94.5 66 92.5 69.8 90 73.2 L 95.5 81 L 87 89.5 L 79.2 84 C 75.8 86.5 72 88.5 68 90 L 66 98 L 54 98 L 52 90 C 48 88.5 44.2 86.5 40.8 84 L 33 89.5 L 24.5 81 L 30 73.2 C 27.5 69.8 25.5 66 24 62 L 16 60 L 16 48 L 24 46 C 25.5 42 27.5 38.2 30 34.8 L 24.5 27 L 33 18.5 L 40.8 24 C 44.2 21.5 48 19.5 52 18 Z" />
+            <circle cx="60" cy="54" r="32" stroke-width="2.5" />
+            <path d="M 33 46 C 33 30 48 27 55 36" stroke-width="2.5" />
+            <path d="M 48 40 C 48 33 62 33 62 40 Z" fill="currentColor" fill-opacity="0.12" />
+            <line x1="46" y1="40" x2="64" y2="40" stroke-width="3" />
+            <line x1="51" y1="40" x2="51" y2="47" stroke-width="2.5" />
+            <line x1="59" y1="40" x2="59" y2="47" stroke-width="2.5" />
+            <line x1="46" y1="53" x2="64" y2="53" stroke-width="3" />
+            <path d="M 48 53 C 48 60 62 60 62 53 Z" fill="currentColor" fill-opacity="0.12" />
+            <path d="M 55 57 C 55 67 72 73 87 62" stroke-width="2.5" />
+          </svg>
+        </div>
+        <span class="font-extrabold text-[17px] tracking-tight text-black">OpenTrace</span>
+      </div>
+      <div class="text-[11px] mt-1 font-medium text-neutral-500">API Change Intelligence &amp; Migration</div>
+    </div>
+
+    <!-- Project Selector & Management -->
+    <div class="px-3.5 pt-2 pb-2">
+      <div class="flex items-center justify-between px-1 mb-1.5">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Workspace Repo</span>
+        <div class="flex items-center gap-2">
+          <button class="text-[11px] font-semibold text-neutral-500 hover:text-black hover:underline" onclick="App.openManageProjectsModal()" title="Manage tracked repositories">
+            Manage
+          </button>
+          <span class="text-neutral-300">&bull;</span>
+          <button class="text-[11px] font-semibold text-black hover:underline" onclick="App.openAddProjectModal()" title="Add new local repository">
+            + Add
+          </button>
+        </div>
+      </div>
+      <div class="relative">
+        <select id="project-select" class="select w-full text-black text-[12px] font-semibold rounded-lg px-2.5 py-1.5 border border-neutral-300 bg-neutral-50 outline-none cursor-pointer transition-colors truncate" onchange="App.switchProject(this.value)">
+          <option value="default">Default Workspace</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Navigation List -->
+    <nav class="flex-1 px-3 mt-3 space-y-0.5 overflow-y-auto" id="sidebar-nav">
+      <div class="nav-item active" data-page="overview">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Overview
+      </div>
+      <div class="nav-item" data-page="analyze">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Analyze
+      </div>
+      <div class="nav-item" data-page="migrate">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Migrate
+      </div>
+      <div class="nav-item" data-page="validate">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Validate
+      </div>
+      <div class="nav-item" data-page="playground">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        API Simulator
+      </div>
+
+      <div class="mx-1 my-3" style="height:1px;background:#E4E4E7;"></div>
+
+      <div class="nav-item" data-page="guide">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        Workflow Guide
+      </div>
+      <div class="nav-item" data-page="pr">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
+        Pull Requests
+      </div>
+      <div class="nav-item" data-page="feedback">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Audit Log
+      </div>
+      <div class="nav-item" data-page="settings">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </div>
+    </nav>
+
+    <!-- Workspace Footer -->
+    <div class="px-3.5 pb-4 pt-2 border-t border-neutral-100">
+      <div class="px-3 py-2 rounded-lg bg-neutral-50 border border-neutral-200">
+        <div class="text-[9.5px] font-bold uppercase tracking-wider text-neutral-400 mb-0.5">Active Workspace</div>
+        <div id="ws-path" class="text-[11px] truncate font-mono text-neutral-700 font-medium">Loading…</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Main Content Canvas ─────────────────────────────── -->
+  <main class="flex-1 h-screen overflow-y-auto bg-white flex flex-col">
+
+    <!-- Top Bar (Clean, no duplicate simulator button) -->
+    <header class="sticky top-0 z-10 flex items-center justify-between px-8 py-3.5 bg-white border-b border-neutral-200">
+      <div>
+        <h1 id="page-title" class="text-[17px] font-bold text-black tracking-tight leading-none">Migration Dashboard</h1>
+        <p id="page-sub"   class="text-[12px] text-neutral-500 mt-1 font-normal">Real-time view of your migration workspace</p>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Status Indicator -->
+        <div id="status-dot" class="flex items-center gap-1.5 text-[12px] font-medium text-neutral-600 mr-2 bg-neutral-100 px-2.5 py-1 rounded-full border border-neutral-200">
+          <span class="w-2 h-2 rounded-full bg-neutral-300"></span> Connecting
+        </div>
+
+        <!-- Action Buttons -->
+        <button class="btn btn-secondary text-[12.5px]" onclick="App.openCliModal()" title="View CLI installation status and automated CI setup">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          Install CLI
+        </button>
+
+        <button class="btn btn-secondary text-[12.5px]" onclick="App.exportReport()" title="Export standalone offline HTML report">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Report
+        </button>
+
+        <button class="btn btn-outline text-[12.5px] text-neutral-700 hover:text-red-600 hover:border-red-300" onclick="App.resetWorkspace()" title="Reset workspace cache">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+          Reset
+        </button>
+
+        <button class="btn btn-primary text-[12.5px]" onclick="App.refresh()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Refresh
+        </button>
+      </div>
+    </header>
+
+    <!-- Page Content Area -->
+    <div id="page-content" class="p-8 max-w-7xl w-full mx-auto animate-fade-in flex-1"></div>
+  </main>
+
+  <!-- Add Project Modal -->
+  <div id="add-project-modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs hidden items-center justify-center p-4" onclick="if (event.target === this) App.closeAddProjectModal()">
+    <div class="card max-w-md w-full p-6 shadow-2xl animate-slide-up bg-white border border-neutral-200">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h3 class="text-[16px] font-bold text-black tracking-tight">Add Local Project</h3>
+          <p class="text-[12px] text-neutral-500 mt-0.5">Track and analyze an API repository on your local system</p>
+        </div>
+        <button class="text-neutral-400 hover:text-black text-xl leading-none" onclick="App.closeAddProjectModal()">&times;</button>
+      </div>
+      <div class="space-y-3.5">
+        <div>
+          <label class="form-label">Project Name</label>
+          <input id="new-proj-name" class="input" placeholder="e.g. Payments Microservice" />
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="form-label mb-0">Repository Directory Path</label>
+            <label class="text-[11px] font-semibold text-black hover:underline cursor-pointer">
+              Browse Folder
+              <input type="file" id="repo-picker" webkitdirectory directory class="hidden" onchange="App.handleRepoBrowse(this)" />
+            </label>
+          </div>
+          <input id="new-proj-repo" class="input font-mono text-[12px]" placeholder="e.g. C:\Projects\payment-service" />
+        </div>
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="form-label mb-0">OpenAPI Spec Path (Optional)</label>
+            <label class="text-[11px] font-semibold text-black hover:underline cursor-pointer">
+              Browse File
+              <input type="file" id="spec-picker" accept=".yaml,.yml,.json" class="hidden" onchange="App.handleSpecBrowse(this)" />
+            </label>
+          </div>
+          <input id="new-proj-spec" class="input font-mono text-[12px]" placeholder="e.g. C:\Projects\payment-service\api\openapi.yaml" />
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-2.5 mt-6 pt-3 border-t border-neutral-100">
+        <button class="btn btn-secondary text-[12.5px]" onclick="App.closeAddProjectModal()">Cancel</button>
+        <button class="btn btn-primary text-[12.5px]" onclick="App.submitAddProject()">Add Project</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manage Projects Modal (Allows deleting unwanted projects) -->
+  <div id="manage-projects-modal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs hidden items-center justify-center p-4" onclick="if (event.target === this) App.closeManageProjectsModal()">
+    <div class="card max-w-lg w-full max-h-[85vh] flex flex-col p-6 shadow-2xl animate-slide-up bg-white border border-neutral-300" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between pb-3 border-b border-neutral-100 flex-shrink-0">
+        <div>
+          <h3 class="text-[16px] font-bold text-black tracking-tight">Tracked Repositories</h3>
+          <p class="text-[12px] text-neutral-500 mt-0.5">Switch between active repositories or remove old projects</p>
+        </div>
+        <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-neutral-100 hover:bg-neutral-200 text-neutral-600 hover:text-black font-bold text-sm transition-all" onclick="App.closeManageProjectsModal()" title="Close (Esc)">✕</button>
+      </div>
+      
+      <div id="modal-project-list" class="space-y-2 overflow-y-auto pr-1 py-4 flex-1">
+        <!-- populated dynamically -->
+      </div>
+
+      <div class="flex items-center justify-between gap-2.5 pt-3 border-t border-neutral-100 flex-shrink-0 bg-white">
+        <button class="btn btn-secondary text-[12.5px]" onclick="App.openAddProjectModal(); App.closeManageProjectsModal();">+ Add New Repository</button>
+        <button class="btn btn-primary text-[12.5px]" onclick="App.closeManageProjectsModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CLI Installation Modal (With clear purpose, GitHub walkthrough & full scroll/close) -->
+  <div id="cli-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs hidden p-4 sm:p-6" onclick="if (event.target === this) App.closeCliModal()">
+    <div class="card p-6 w-full max-w-xl max-h-[86vh] flex flex-col shadow-2xl bg-white border border-neutral-300 animate-slide-up" onclick="event.stopPropagation()">
+      <!-- Fixed Header -->
+      <div class="flex items-center justify-between pb-3.5 border-b border-neutral-200 flex-shrink-0">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-black flex items-center justify-center text-white shadow-sm">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+          </div>
+          <div>
+            <div class="text-[16px] font-bold text-black tracking-tight">OpenTrace CLI Setup Guide</div>
+            <div class="text-[12px] text-neutral-500">Run migrations directly in terminal or CI/CD pipelines</div>
+          </div>
+        </div>
+        <button class="w-8 h-8 rounded-lg flex items-center justify-center bg-neutral-100 hover:bg-neutral-200 text-neutral-700 hover:text-black font-bold text-sm transition-all" onclick="App.closeCliModal()" title="Close (Esc)">✕</button>
+      </div>
+
+      <!-- Scrollable Body with smooth scrolling -->
+      <div class="overflow-y-auto pr-2 py-4 space-y-4 flex-1">
+        
+        <!-- Purpose Callout -->
+        <div class="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 text-[12px] text-neutral-700 leading-relaxed">
+          <strong>Why the CLI?</strong> The CLI runs at native terminal speed. Your proprietary source code never leaves your computer, and checks can be automated inside GitHub Actions or pre-commit hooks to block breaking changes before merge.
+        </div>
+
+        <!-- Step 1: Clone / Download from GitHub -->
+        <div class="p-4 bg-white border border-neutral-200 rounded-xl">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="font-bold text-[13px] text-black">Step 1: Download or Clone from GitHub</div>
+            <span class="badge" style="background:#000;color:#fff;">1</span>
+          </div>
+          <div class="text-[12px] text-neutral-500 mb-2.5">
+            Clone the repository or download and extract the repository files:
+          </div>
+          <div class="flex items-center justify-between bg-neutral-950 text-neutral-200 font-mono text-[11.5px] p-2.5 rounded-lg border border-neutral-800 mb-2">
+            <span class="truncate pr-2">git clone https://github.com/opentrace-ai/opentrace.git</span>
+            <button class="text-[11px] font-sans text-neutral-400 hover:text-white flex-shrink-0" onclick="App.copyToClipboard('git clone https://github.com/opentrace-ai/opentrace.git')">Copy</button>
+          </div>
+          <div class="text-[11.5px] text-neutral-600">
+            Open your terminal and enter the project folder: <code class="font-mono text-black font-semibold bg-neutral-100 px-1 py-0.5 rounded">cd opentrace</code>
+          </div>
+        </div>
+
+        <!-- Step 2: Install via pip -->
+        <div class="p-4 bg-white border border-neutral-200 rounded-xl">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="font-bold text-[13px] text-black">Step 2: Install in Development Mode</div>
+            <span class="badge" style="background:#000;color:#fff;">2</span>
+          </div>
+          <div class="text-[12px] text-neutral-500 mb-2.5">
+            Run this command inside the project directory to register <code class="font-mono text-black font-semibold">opentrace</code> on your system PATH:
+          </div>
+          <div class="flex items-center justify-between bg-neutral-950 text-neutral-200 font-mono text-[12px] p-2.5 rounded-lg border border-neutral-800">
+            <span>pip install -e .</span>
+            <button class="text-[11px] font-sans text-neutral-400 hover:text-white" onclick="App.copyToClipboard('pip install -e .')">Copy</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Verify & Test -->
+        <div class="p-4 bg-white border border-neutral-200 rounded-xl">
+          <div class="flex items-center justify-between mb-1.5">
+            <div class="font-bold text-[13px] text-black">Step 3: Verify Installation</div>
+            <span class="badge" style="background:#000;color:#fff;">3</span>
+          </div>
+          <div class="text-[12px] text-neutral-500 mb-2.5">
+            Check that the CLI responds and optionally run the test suite:
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center justify-between bg-neutral-950 text-neutral-200 font-mono text-[11.5px] p-2.5 rounded-lg border border-neutral-800">
+              <span>opentrace --version</span>
+              <button class="text-[11px] font-sans text-neutral-400 hover:text-white" onclick="App.copyToClipboard('opentrace --version')">Copy</button>
+            </div>
+            <div class="flex items-center justify-between bg-neutral-950 text-neutral-200 font-mono text-[11.5px] p-2.5 rounded-lg border border-neutral-800">
+              <span>pytest tests/ -q</span>
+              <button class="text-[11px] font-sans text-neutral-400 hover:text-white" onclick="App.copyToClipboard('pytest tests/ -q')">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 1-Click Environment Sync (For current system) -->
+        <div class="p-4 bg-neutral-50 border border-neutral-200 rounded-xl">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-[13px] font-bold text-black">1-Click Local System Sync</div>
+              <div class="text-[11.5px] text-neutral-500 mt-0.5">Automatically configures editable CLI mode across detected Python runtimes.</div>
+            </div>
+            <button id="btn-auto-install" class="btn btn-primary text-[12px]" onclick="App.runAutoInstall()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+              Sync All
+            </button>
+          </div>
+        </div>
+
+        <!-- Status Badge -->
+        <div id="cli-status-badge" class="p-3 bg-neutral-100 rounded-xl border border-neutral-200 text-neutral-800 text-[12px] flex items-center gap-2">
+          <span id="cli-status-text">Checking CLI status...</span>
+        </div>
+
+      </div>
+
+      <!-- Fixed Footer -->
+      <div class="flex items-center justify-between pt-3.5 border-t border-neutral-200 flex-shrink-0 bg-white">
+        <button class="btn btn-secondary text-[12.5px]" onclick="App.closeCliModal()">Close Window</button>
+        <button class="btn btn-primary text-[12.5px]" onclick="App.closeCliModal()">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div id="toast-container"></div>
+
+  <script src="/assets/components.js?v=2.3.0"></script>
+  <script src="/assets/app.js?v=2.3.0"></script>
+</body>
+</html>

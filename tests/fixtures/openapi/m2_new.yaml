@@ -1,0 +1,29 @@
+openapi: 3.1.0
+info: {title: M2 fixture, version: '2'}
+security: [{apiKey: []}]
+paths:
+  /methods:
+    get:
+      responses: {'200': {description: OK}}
+  /orders:
+    post:
+      parameters:
+        - {name: status, in: query, required: true, schema: {type: string}}
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount: {type: integer}
+                state: {type: string, enum: [paid]}
+      responses:
+        '200':
+          description: changed wording only
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: {type: string}
+                  state: {type: string, enum: [paid]}

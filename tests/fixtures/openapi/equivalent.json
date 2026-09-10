@@ -1,0 +1,25 @@
+{
+  "openapi": "3.1.0",
+  "info": {"title": "Equivalence API", "version": "1.0.0"},
+  "paths": {
+    "/widgets": {
+      "post": {
+        "operationId": "createWidget",
+        "responses": {"201": {"description": "Created"}},
+        "requestBody": {
+          "required": true,
+          "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Widget"}}}
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Widget": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {"name": {"type": "string"}, "id": {"type": "integer"}}
+      }
+    }
+  }
+}

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChangeMesh Migration Report — </title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #F8FAFC; color: #0F172A; line-height: 1.5; padding: 32px; }
+        .container { max-width: 1080px; margin: 0 auto; background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
+        .header { background: #0F172A; color: #FFFFFF; padding: 28px 36px; display: flex; align-items: center; justify-content: space-between; }
+        .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: #FFFFFF; }
+        .meta { font-size: 12px; color: #94A3B8; margin-top: 4px; }
+        .badge-status { background: #10B981; color: white; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+        .content { padding: 36px; }
+        .section-title { font-size: 16px; font-weight: 700; color: #1E293B; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .grid-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+        .stat-card { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; border-top: 3px solid #4F46E5; }
+        .stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: #64748B; }
+        .stat-val { font-size: 22px; font-weight: 800; color: #0F172A; margin-top: 4px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 28px; }
+        th { background: #F8FAFC; text-align: left; font-size: 11px; text-transform: uppercase; color: #64748B; padding: 10px 14px; border-bottom: 1px solid #E2E8F0; }
+        td { padding: 12px 14px; border-bottom: 1px solid #F1F5F9; font-size: 13px; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+        .badge-red { background: #FEE2E2; color: #DC2626; }
+        .badge-indigo { background: #EEF2FF; color: #4338CA; }
+        .badge-strategy { background: #E0E7FF; color: #4338CA; }
+        .diff-card { border: 1px solid #E2E8F0; border-radius: 8px; overflow: hidden; margin-bottom: 16px; }
+        .diff-header { background: #F8FAFC; padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E2E8F0; }
+        .file-name { font-family: monospace; font-weight: 700; font-size: 13px; color: #1E293B; }
+        .symbol-name { font-family: monospace; font-size: 11px; color: #64748B; margin-left: 8px; }
+        .diff-content { background: #FFFFFF; font-family: monospace; font-size: 12px; }
+        .diff-line { padding: 4px 16px; border-bottom: 1px solid #F8FAFC; }
+        .diff-line.del { background: #FEE2E2; color: #991B1B; }
+        .diff-line.add { background: #DCFCE7; color: #166534; }
+        .callgraph-container { background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; margin-bottom: 32px; overflow-x: auto; }
+        .footer { text-align: center; font-size: 11px; color: #94A3B8; margin-top: 32px; border-top: 1px solid #F1F5F9; padding-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <div class="logo">ChangeMesh Migration Report</div>
+                <div class="meta">Workspace:  &bull; Generated: 2026-09-04 07:07:33 UTC</div>
+            </div>
+            <span class="badge-status">GENERATED</span>
+        </div>
+
+        <div class="content">
+            <!-- Stats -->
+            <div class="grid-stats">
+                <div class="stat-card">
+                    <div class="stat-label">Breaking Changes</div>
+                    <div class="stat-val">1</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Direct Impacts</div>
+                    <div class="stat-val">1</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Indirect Callers</div>
+                    <div class="stat-val">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Sandbox Syntax</div>
+                    <div class="stat-val">✓ Passed</div>
+                </div>
+            </div>
+
+            <!-- Call Graph -->
+            <div class="section-title">Visual Call Graph & Blast Radius</div>
+            <div class="callgraph-container">
+                
+    <svg width="100%" height="180" viewBox="0 0 800 180" xmlns="http://www.w3.org/2000/svg">
+        
+        <g transform="translate(20, 40)">
+            <rect width="180" height="40" rx="8" fill="#4F46E5" />
+            <text x="90" y="24" fill="#FFFFFF" font-size="12" font-weight="bold" text-anchor="middle">POST /payments</text>
+        </g>
+    
+            <path d="M 200 60 C 260 60, 260 50, 300 50" stroke="#6366F1" stroke-width="2" fill="none" />
+            <g transform="translate(300, 30)">
+                <rect width="200" height="40" rx="8" fill="#EEF2FF" stroke="#6366F1" stroke-width="1.5" />
+                <text x="10" y="18" fill="#1E293B" font-size="11" font-weight="bold">src/payment_service.py:7</text>
+                <text x="10" y="32" fill="#4F46E5" font-size="9">[DIRECT IMPACT]</text>
+            </g>
+        
+    </svg>
+    
+            </div>
+
+            <!-- Breaking Changes -->
+            <div class="section-title">Detected API Changes</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Method</th>
+                        <th>Path</th>
+                        <th>Type</th>
+                        <th>Field Location</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>POST</strong></td>
+                        <td><code>/payments</code></td>
+                        <td><span class="badge badge-red">BREAKING</span></td>
+                        <td><code>request.body[application/json].amount</code></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Proposed Unified Diff -->
+            <div class="section-title">Deterministic Migration Patch (Strategy: SMALL &bull; Policy: balanced)</div>
+            
+        <div class="diff-card">
+            <div class="diff-header">
+                <div>
+                    <span class="file-name">src/payment_service.py</span>
+                    <span class="symbol-name">src/payment_service.py::create_payment</span>
+                </div>
+                <span class="badge badge-strategy">SMALL</span>
+            </div>
+            <div class="diff-content"><div class="diff-line del">- "amount": price, </div></div>
+        </div>
+        
+
+            <!-- Validation Evidence -->
+            <div class="section-title">Sandbox Validation Evidence</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Check</th>
+                        <th>Status</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Workspace Isolation</td>
+                        <td><span class="badge badge-indigo">PASS</span></td>
+                        <td>Temporary sandbox created & cleaned</td>
+                    </tr>
+                    <tr>
+                        <td>Patch Applicability</td>
+                        <td><span class="badge badge-indigo">PASS</span></td>
+                        <td>Exact SHA-256 preconditioned match</td>
+                    </tr>
+                    <tr>
+                        <td>Syntax Verification</td>
+                        <td><span class="badge badge-indigo">PASS</span></td>
+                        <td>Python AST parsed in 1499ms</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="footer">
+                Report produced by ChangeMesh Local Developer Hub &bull; Zero external cloud dependencies.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

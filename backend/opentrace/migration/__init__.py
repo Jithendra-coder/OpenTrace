@@ -1,0 +1,66 @@
+"""M10 deterministic migration planning and conservative source edits."""
+
+from opentrace.migration.engine import (
+    DeterministicMigrationEngine,
+    apply_edits,
+    apply_plan,
+    detect_edit_conflicts,
+    migration_support_matrix,
+    plan_migration,
+    render_unified_diff,
+)
+from opentrace.migration.models import (
+    DeterministicMigrationPlan,
+    EditKind,
+    GeneratedPatch,
+    MigrationBatchResult,
+    MigrationCandidate,
+    MigrationConflict,
+    MigrationEdit,
+    MigrationOutcome,
+    MigrationPlan,
+    MigrationResult,
+    MigrationSummary,
+    Repairability,
+    RepairStrategy,
+    SourcePrecondition,
+    UnsupportedMigration,
+)
+from opentrace.migration.rules import (
+    REMOVE_REQUEST_PROPERTY_RULE,
+    RULE_REGISTRY,
+    SUPPORT_MATRIX,
+    support_matrix,
+)
+from opentrace.migration.vertical import analyze_migration_vertical_slice, analyze_vertical_slice
+
+__all__ = [
+    "DeterministicMigrationEngine",
+    "DeterministicMigrationPlan",
+    "EditKind",
+    "GeneratedPatch",
+    "MigrationBatchResult",
+    "MigrationCandidate",
+    "MigrationConflict",
+    "MigrationEdit",
+    "MigrationOutcome",
+    "MigrationPlan",
+    "MigrationResult",
+    "MigrationSummary",
+    "REMOVE_REQUEST_PROPERTY_RULE",
+    "RULE_REGISTRY",
+    "Repairability",
+    "RepairStrategy",
+    "SUPPORT_MATRIX",
+    "SourcePrecondition",
+    "UnsupportedMigration",
+    "analyze_migration_vertical_slice",
+    "analyze_vertical_slice",
+    "apply_plan",
+    "apply_edits",
+    "detect_edit_conflicts",
+    "migration_support_matrix",
+    "plan_migration",
+    "render_unified_diff",
+    "support_matrix",
+]

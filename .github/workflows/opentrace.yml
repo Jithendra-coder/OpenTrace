@@ -1,0 +1,61 @@
+name: OpenTrace CI & Contract Gate
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test-suite:
+    name: Core Test Suite (220 Tests)
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run Test Suite
+        run: |
+          pytest tests/ -v
+
+  api-contract-gate:
+    name: OpenTrace End-to-End Sample Verification
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install OpenTrace
+        run: |
+          pip install -e .
+          pip install pytest
+
+      - name: Validate Sample 1 (Payment Gateway via opentrace)
+        run: |
+          opentrace analyze --old sample1/api_v1.yaml --new sample1/api_v2.yaml --repo sample1
+          opentrace migrate --policy balanced
+          opentrace validate
+          opentrace status
+
+      - name: Validate Sample 2 (Enterprise Billing)
+        run: |
+          opentrace analyze --old sample2/api_v1.yaml --new sample2/api_v2.yaml --repo sample2
+          opentrace migrate --policy balanced
+          opentrace validate
+          opentrace status

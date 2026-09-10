@@ -1,0 +1,16 @@
+# SpecImpact Generated Patch
+# Strategy: SMALL (DeterministicFakeProvider — demo mode)
+# Risk: LOW
+# Generation Status: GENERATED
+# Target File: payment_service.py
+# Target Symbol: payment_service.py::create_payment
+
+--- a/payment_service.py
++++ b/payment_service.py
+@@ -21,7 +21,6 @@
+     """
+     payload = {
+-        "amount": amount,
+         "currency": currency,
+     }
+     response = requests.post(f"{BASE_URL}/payments", json=payload)
