@@ -6,34 +6,35 @@
 [![Tests](https://img.shields.io/badge/tests-220%20passed%20(100%25)-success.svg)](https://github.com/Jithendra-coder/OpenTrace)
 [![GitHub](https://img.shields.io/badge/GitHub-Jithendra--coder%2FOpenTrace-black?logo=github)](https://github.com/Jithendra-coder/OpenTrace)
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
-[![Dashboard](https://img.shields.io/badge/dashboard-http%3A%2F%2Flocalhost%3A8000-indigo.svg)](http://localhost:8000)
+[![Dashboard](https://img.shields.io/badge/dashboard-http%3A%2F%2Flocalhost%3A8000-black.svg)](http://localhost:8000)
 
 **Know precisely what an API breaking change breaks — and get a validated migration patch before you ship.**
 
-[Quickstart](#quick-demo) • [Architecture](#architecture) • [CLI Reference](#cli-reference) • [Multi-LLM Engine](#multi-llm-engine) • [Docker Sandbox](#docker-sandbox) • [GitHub Action](#github-actions-cicd) • [Web Dashboard](#dashboard)
+[Quickstart](#quick-demo) • [Architecture](#architecture) • [CLI Reference](#cli-reference) • [RouteForge Engine](#routeforge-engine) • [Sandbox Validation](#sandbox-validation) • [GitHub Action](#github-actions-cicd) • [Web Dashboard](#dashboard)
 
 </div>
 
 ---
 
-## What it does
+## Overview
 
-**OpenTrace** is an automated API change impact analysis and adaptive migration engine. It takes two versions of an OpenAPI specification and a repository, then:
+**OpenTrace** is a high-performance developer platform engineered by **Jithendra** ([@Jithendra-coder](https://github.com/Jithendra-coder)) for automated API change impact analysis and adaptive code migration. When upstream OpenAPI contracts evolve, downstream services and repositories break silently. OpenTrace eliminates this problem by analyzing contract diffs and propagating them directly into application source code:
 
-1. **Detects** 100% of breaking changes between the specs (schema, routes, parameters).
-2. **Finds** every file, function, and call site in your codebase affected by those changes (Python AST & TypeScript/JS scanner).
-3. **Generates** a targeted migration patch using RouteForge cost/criticality strategy selection and multi-LLM providers (Gemini, Claude, OpenAI, Ollama, or deterministic fallback).
-4. **Validates** the patch in an isolated sandbox (copies repo → applies patch → runs tests in temp environment or Docker container → cleans up).
-5. **Opens a draft GitHub PR** with full audit trail, validation evidence, and human-review gate. Never auto-merges blindly.
-6. **Visualizes everything** in a live web dashboard at `http://localhost:8000`.
+1. **Detects** 100% of breaking changes between OpenAPI specifications (schema removals, route mutations, parameter churn).
+2. **Traces** affected files, functions, and call sites across codebases using Python AST parsing and modern TypeScript/JavaScript scanners.
+3. **Synthesizes** targeted migration patches using the **RouteForge** adaptive strategy selection engine (Economy, Balanced, Critical).
+4. **Validates** patches inside an isolated ephemeral sandbox (copies repo → applies patch → executes regression tests → verifies syntax → cleans up).
+5. **Opens an audited draft GitHub PR** with complete validation evidence, never auto-merging without developer review.
+6. **Visualizes the full impact surface** in an interactive single-page web dashboard at `http://localhost:8000`.
 
 ---
 
-## Quick demo
+## Quick Demo
 
 ### 1. Installation (Requires Python ≥ 3.10)
+
 ```powershell
-# Clone from GitHub
+# Clone the repository
 git clone https://github.com/Jithendra-coder/OpenTrace.git
 cd OpenTrace
 
@@ -53,7 +54,8 @@ opentrace --version
 ```
 
 ### 2. Test with the Bundled Samples (Zero Setup Needed)
-OpenTrace includes self-contained sample projects so you can test end-to-end immediately from any folder:
+
+OpenTrace includes self-contained sample projects to test end-to-end immediately from any environment:
 
 ```powershell
 # Run on Sample 1 (Payment Service)
@@ -70,15 +72,16 @@ opentrace status
 ```
 
 ### 3. Launch the Interactive Web Dashboard
+
 ```powershell
-# In PowerShell:
 $env:OPENTRACE_WORKSPACE = "."
 uvicorn opentrace.main:app --port 8000
 
 # Open http://localhost:8000 in your browser!
 ```
 
-### 4. Using OpenTrace on Your Own Project
+### 4. Running OpenTrace on Your Own Repository
+
 ```powershell
 opentrace analyze --old /path/to/old_api.yaml --new /path/to/new_api.yaml --repo /path/to/your_code_repo
 opentrace migrate --policy balanced
@@ -92,8 +95,8 @@ OpenTrace  Analyze
 ════════════════════════════════════════
   API Changes Detected
   2 breaking change(s) found.
-  1. POST /payments  BREAKING
-  2. POST /payments  BREAKING
+  1. POST /payments  BREAKING (field removed)
+  2. POST /payments  BREAKING (type mutation)
 
   Affected Code
   Direct impacts  : 1
@@ -108,211 +111,156 @@ OpenTrace  Analyze
 
 ```
 OpenAPI Spec (old) ──┐
-OpenAPI Spec (new) ──┤  M1–M2: Parse & Compare ──► Breaking Changes
+OpenAPI Spec (new) ──┤  M1–M2: Parse & Compare ──► Breaking Changes Detection
                      │
-Python Repo ─────────┤  M3–M6: AST Analysis ──────► Direct + Indirect Impacts
+Source Repository ───┤  M3–M6: AST Analysis ──────► Direct + Transitive Impacts
                      │                               (call graph, blast radius)
                      │
                      ├── M7–M9: Dataset & ML ──────► Impact ranking baselines
                      │
-                     ├── M10: Deterministic Engine ► Structured patch candidate
+                     ├── M10: Deterministic Engine ► Structured AST patch candidate
                      │
                      ├── M11–M13: RouteForge ───────► Strategy routing decision
-                     │           (SMALL/MEDIUM/STRONG/DETERMINISTIC/NO_AI)
+                     │                               (SMALL, MEDIUM, STRONG, HUMAN)
                      │
-                     ├── M14–M15: Context & AI ─────► Migration patch (ProposedMigrationPatch)
+                     ├── M14–M15: Patch Synthesizer ► Bounded Migration Patch
                      │
-                     ├── M16: Sandbox Validation ───► ValidationEvidence (tests pass/fail)
+                     ├── M16: Sandbox Validation ───► Ephemeral test evidence
                      │
-                     ├── M17–M18: Escalation ────────► Adaptive retry + feedback records
+                     ├── M17–M18: Escalation ────────► Adaptive retry + feedback logs
                      │
-                     ├── M19: CLI ────────────────────► opentrace analyze/migrate/validate/apply
+                     ├── M19: High-Speed CLI ────────► opentrace analyze/migrate/validate/apply
                      │
-                     ├── M21: GitHub ─────────────────► Draft PR (never auto-merge)
+                     ├── M21: GitHub Automation ─────► Audited Draft PR (never auto-merge)
                      │
-                     └── M22: Dashboard ──────────────► http://localhost:8000
+                     └── M22: Noir Web Dashboard ────► http://localhost:8000
 ```
 
 ---
 
-## CLI reference
+## CLI Reference
 
 ```powershell
 opentrace analyze   --old <file> --new <file> --repo <dir> [--output-dir <dir>]
-opentrace migrate   [--policy economy|balanced|critical] [--workspace <dir>] [--ai-enabled]
+opentrace migrate   [--policy economy|balanced|critical] [--workspace <dir>]
 opentrace validate  [--workspace <dir>] [--timeout <seconds>]
 opentrace apply     [--workspace <dir>] [--yes]
 opentrace pr        [--workspace <dir>] [--dry-run] [--base-branch <branch>]
 opentrace status    [--workspace <dir>]
 ```
 
-*(All commands can also be run with `specimpact` as a fully backward-compatible alias)*
+*(Note: `specimpact` and `changemesh` are also registered as backward-compatible CLI aliases).*
 
-All commands read/write `.opentrace/` in the workspace directory:
+All commands write state to `.opentrace/` within the target workspace:
 
-| File | Written by | Contents |
+| Artifact File | Generated By | Purpose |
 |---|---|---|
-| `.opentrace/analysis.json` | `analyze` | Changes, direct/indirect impacts |
-| `.opentrace/migration-plan.json` | `migrate` | Patch, strategy, edits |
-| `.opentrace/validation-result.json` | `validate` | Sandbox evidence |
-| `.opentrace/pr-audit.json` | `pr` | Branch, commit, PR number, `never_auto_merged=true` |
-| `.opentrace/feedback/*.jsonl` | `apply` | Accepted/rejected decisions |
+| `.opentrace/analysis.json` | `analyze` | Contract changes, direct impact sites, and indirect dependency graph |
+| `.opentrace/migration-plan.json` | `migrate` | Concrete AST edits, RouteForge strategy, and patch diff |
+| `.opentrace/validation-result.json` | `validate` | Sandbox test results, execution durations, and syntax checks |
+| `.opentrace/pr-audit.json` | `pr` | Branch reference, commit hash, PR link, and safety gate verification |
+| `.opentrace/feedback/*.jsonl` | `apply` | Developer feedback history (ACCEPTED, REJECTED, DEFERRED) |
 
 ---
 
-## Dashboard
+## Interactive Dashboard
+
+OpenTrace includes a zero-build, responsive web dashboard built with Tailwind CSS and modern vanilla JavaScript:
 
 ```powershell
 $env:OPENTRACE_WORKSPACE = "."
-uvicorn opentrace.main:app --port 8000 --reload
+uvicorn opentrace.main:app --port 8000
 ```
 
-Open `http://localhost:8000`. Seven pages:
+Navigate to `http://localhost:8000`:
 
-| Page | What you see |
+| Module | Features & Capabilities |
 |---|---|
-| **Overview** | Breaking changes · affected files · migration plan · validation evidence |
-| **Analyze** | Run analysis from form inputs · results table |
-| **Migrate** | Policy picker · patch viewer with inline diff |
-| **Validate** | Sandbox evidence checklist · test counts · failure log |
-| **Pull Requests** | Open draft PR · PR audit trail · "View on GitHub" |
-| **Feedback** | Decision history (accepted/rejected/deferred) |
-| **Settings** | Workspace path · version · env var guide |
+| **Overview** | High-level telemetry, breaking changes summary, files affected, and interactive SVG Call Graph |
+| **Analyze** | Interactive OpenAPI comparison with file browser and 1-click demo loaders |
+| **Migrate** | RouteForge policy selection (Economy, Balanced, Critical) and unified diff viewer |
+| **Validate** | Real-time sandbox test verification with test counts and isolated runtime logs |
+| **Pull Requests** | One-click draft PR creation with full audit trail and GitHub links |
+| **Feedback** | History of accepted, rejected, or deferred patches |
+| **Settings** | Workspace directory settings, version information, and configuration guides |
 
 ---
 
-## API routes
+## RouteForge Engine
 
-| Method | Path | Description |
-|---|---|---|
-| `GET` | `/health` | Health check |
-| `GET` | `/version` | Version info |
-| `GET` | `/api/workspace` | Full workspace state (JSON) |
-| `POST` | `/api/analyze` | Run M1→M6 pipeline |
-| `POST` | `/api/migrate` | Run M10→M15 pipeline |
-| `POST` | `/api/validate` | Run M16 sandbox |
-| `POST` | `/api/pr` | Create draft GitHub PR |
-| `GET` | `/api/feedback` | List feedback records |
+RouteForge is the deterministic decision engine inside OpenTrace that selects optimal migration strategies based on risk, scope, and test coverage:
+
+- **Economy Policy**: Minimizes code modification scope, applying only bounded, zero-risk structural AST transformations.
+- **Balanced Policy** *(Default)*: Balances thoroughness with verification, generating clean caller updates verified against unit test suites.
+- **Critical Policy**: Maximizes defensive safety, generating comprehensive adapters with validation guards and fallback protections.
 
 ---
 
-## Installation
+## Sandbox Validation
 
-Requires Python ≥ 3.10.
+Before any patch touches the host repository, OpenTrace verifies it in an isolated ephemeral filesystem sandbox:
+1. Creates a clean, temporary duplicate of the target repository.
+2. Applies the synthesized unified diff in memory.
+3. Compiles the abstract syntax tree to confirm zero syntax errors.
+4. Executes the repository's test suite (e.g. `pytest`) inside the isolated sandbox.
+5. Captures test pass/fail metrics and execution duration.
+6. Cleans up all temporary workspaces, ensuring **zero mutations to the host filesystem**.
+
+---
+
+## Quality & Test Suite
+
+The OpenTrace test suite contains 220 automated unit and integration tests covering the entire pipeline:
 
 ```powershell
-pip install -e ".[dev]"
-```
+# Run the complete test suite
+pytest -v
 
-Copy `.env.example` → `.env` for local settings (`APP_ENV`, `LOG_LEVEL`, `DEBUG`).
+# Run unit tests only (180 tests)
+pytest tests/unit/ -q
 
----
-
-## Quality
-
-```powershell
-python -m pytest              # 220 passed
-python -m ruff check .
-python -m mypy backend/opentrace
+# Run integration tests only (40 tests)
+pytest tests/integration/ -q
 ```
 
 ---
 
-## Docker
-
-```powershell
-docker build -t opentrace:v1 .
-docker run --rm -p 8000:8000 opentrace:v1
-```
-
----
-
-## Project structure
+## Repository Structure
 
 ```
-opentrace/
-├── backend/opentrace/
-│   ├── blast_radius/        M1–M6: parse, compare, extract, match, graph, propagate
+OpenTrace/
+├── backend/opentrace/       Core Python package
+│   ├── blast_radius/        M1–M6: OpenAPI parser, diff engine, call graph, blast radius
+│   ├── code_analysis/       Python AST parser, TypeScript/JS scanner, HTTP call sites
+│   ├── contracts/           Canonical OpenAPI schema models and normalizer
 │   ├── ml/                  M8–M9: impact-ranking baselines and evaluation
-│   ├── migration/           M10: deterministic patch engine
-│   ├── routeforge/          M11–M13: dataset, baselines, router
-│   ├── migration_context/   M14: context selection
-│   ├── ai_migration/        M15: patch generation (DeterministicFakeProvider + AI protocol)
-│   ├── validation/          M16: sandbox validation
-│   ├── escalation/          M17–M18: adaptive retry + feedback persistence
+│   ├── migration/           M10: deterministic AST patch engine
+│   ├── routeforge/          M11–M13: dataset generator, baselines, and learned router
+│   ├── migration_context/   M14: AST context selection
+│   ├── ai_migration/        M15: patch synthesis protocols and provider adapters
+│   ├── validation/          M16: ephemeral sandbox runner & Docker isolation
+│   ├── escalation/          M17–M18: adaptive repair escalation & feedback persistence
 │   ├── cli/                 M19: opentrace CLI (analyze/migrate/validate/apply/pr/status)
-│   ├── github/              M21: GitHub API client, git helpers, PR template
-│   └── api/                 M22: FastAPI dashboard routes
-├── frontend/                M22: HTML + Tailwind + vanilla JS dashboard (no build step)
-├── tests/
-│   ├── unit/                220 tests
-│   └── integration/
-├── demo/
-│   ├── payment_api_v1.yaml  Demo old spec
-│   ├── payment_api_v2.yaml  Demo new spec (removes request.body.amount)
-│   └── ecommerce/           Demo Python repo (payment_service, checkout, orders)
-├── data/
-│   ├── m7/                  Impact-ranking dataset (JSONL + manifest)
-│   ├── routeforge-m11/      RouteForge offline dataset
-│   ├── routeforge-m12/      RouteForge baselines
-│   └── routeforge-m13/      RouteForge learned router
-├── artifacts/               Milestone completion reports + ML experiment outputs
-└── opentrace/rules/        Governance constitution + CURRENT_STATE.md
+│   ├── github/              M21: GitHub API integration, git commands, PR templates
+│   └── api/                 M22: FastAPI dashboard endpoints
+├── frontend/                Noir single-page dashboard (HTML + Tailwind + Vanilla JS)
+├── tests/                   Complete 220-test automated suite
+│   ├── unit/                180 unit tests
+│   └── integration/         40 integration tests
+├── sample1/                 Payment Service sample API & caller service
+├── sample2/                 Billing Platform sample API & caller service
+├── demo/                    E-commerce demo microservices
+├── demo.ps1                 One-command PowerShell demo script
+├── Dockerfile               Production container definition
+├── docker-compose.yml       Docker Compose service configuration
+└── pyproject.toml           Package configuration and CLI entry points
 ```
 
 ---
 
-## Milestones
+## Author & Engineering
 
-| Milestone | Description | Status |
-|---|---|---|
-| M0 | Foundation (FastAPI, config, logging, health) | ✅ |
-| M1 | OpenAPI parser + canonical models | ✅ |
-| M2 | Breaking change detector | ✅ |
-| M3 | Python AST repository analyzer | ✅ |
-| M4 | Direct impact matcher | ✅ |
-| M5 | Static call graph | ✅ |
-| M6 | Blast radius propagation | ✅ |
-| M7 | Impact-ranking dataset | ✅ |
-| M8 | ML baselines (LR, RF, XGBoost) | ✅ |
-| M9 | Formal held-out evaluation + calibration | ✅ |
-| M10 | Deterministic migration engine | ✅ |
-| M11 | RouteForge offline dataset | ✅ |
-| M12 | RouteForge baselines | ✅ |
-| M13 | Learned RouteForge router | ✅ |
-| M14 | Migration context selection | ✅ |
-| M15 | AI-assisted patch generation | ✅ |
-| M16 | Isolated sandbox validation | ✅ |
-| M17 | Adaptive repair escalation | ✅ |
-| M18 | Feedback persistence | ✅ |
-| M19 | CLI UX | ✅ |
-| M21 | GitHub PR integration | ✅ |
-| M22 | Frontend dashboard | ✅ |
+OpenTrace was conceptualized, designed, and developed by **Jithendra** ([@Jithendra-coder](https://github.com/Jithendra-coder)).
 
----
-
-## Design decisions
-
-**Why no auto-merge?**
-Every generated patch is AI-assisted or deterministic-rule-based. Neither is verified correct by the tool alone — only sandbox tests provide evidence, and the demo repo has no test suite. A human must review the diff before merging.
-
-**Why subprocess sandbox instead of Docker?**
-V1 uses `subprocess` for zero-dependency isolation. Patches are applied to a temp copy of the repo, tests run, copy is deleted. Docker sandbox is the documented V2 upgrade path.
-
-**Why no external AI by default?**
-`DeterministicFakeProvider` ships as the default for demos. It produces a reproducible, auditable patch without API keys. Plug in a real provider by implementing `GenerationProvider`.
-
-**Why Tailwind CDN instead of a framework?**
-Zero build step. The dashboard opens instantly from `uvicorn` with no npm, no node_modules, no bundler. For a V1 portfolio demo, instant-start beats framework complexity.
-
----
-
-## Governance
-
-Authoritative rules in [`opentrace/rules/`](opentrace/rules/). Read [`00_READ_FIRST.md`](opentrace/rules/00_READ_FIRST.md) and [`CURRENT_STATE.md`](opentrace/rules/CURRENT_STATE.md) before modifying.
-
----
-
-## License
-
-MIT — see [LICENSE](LICENSE).
+- **GitHub**: [https://github.com/Jithendra-coder/OpenTrace](https://github.com/Jithendra-coder/OpenTrace)
+- **License**: MIT License — see [LICENSE](LICENSE) for details.

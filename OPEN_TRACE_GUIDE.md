@@ -71,7 +71,7 @@ The OpenTrace Overview dashboard features four equal-height metric cards enginee
 | :--- | :--- | :--- | :--- |
 | **Breaking Changes** | Red | #EF4444 | Total breaking API contract diffs detected |
 | **Files Affected** | Amber / Orange | #F59E0B | Count of direct code call-sites and indirect dependencies |
-| **Validation** | Green | #10B981 | Real-time sandbox test verification (TESTS_PASSED) |
+| **Validation** | Slate / Noir | #18181B | Real-time sandbox test verification (TESTS_PASSED) |
 | **Open PRs / Scope** | Dark Slate | #18181B | Active pull request status and migration branch tracking |
 
 ---

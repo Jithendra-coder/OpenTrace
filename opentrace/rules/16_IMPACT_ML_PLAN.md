@@ -1,5 +1,0 @@
-# Impact ML Plan
-
-Prediction target after M8: `P(symbol affected | API change, static evidence, graph evidence)`. Frozen baseline progression is heuristic → Logistic Regression → Random Forest → XGBoost; more sophisticated models require recorded evidence that these are insufficient. Candidate features: endpoint/method/host match, request/response overlap, direct reference, URL certainty, graph distance/centrality/callers, severity, symbol/path similarity, complexity and coverage.
-
-Evaluate on leakage-resistant versioned splits using Precision@5, Recall@5, Precision@10, Recall@10, MRR, NDCG@K; plus Precision, Recall, F1, ROC-AUC, Brier Score and Expected Calibration Error. No README, portfolio, or product metric may appear without its reproducible experiment artifact. Outputs remain scores through M8; only after M9 held-out calibration evidence may an output be named `estimated_impact_probability`. Report confidence intervals where feasible, baselines, failure slices, artifact locations and reproduction command. Never fabricate metrics.

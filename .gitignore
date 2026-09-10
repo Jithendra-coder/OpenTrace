@@ -19,6 +19,12 @@ dist/
 .vscode/
 *.code-workspace
 .opentrace/
+.specimpact/
 .gemini/
 *.log
 *.tmp
+artifacts/
+"Test OpenTrace First Time/"
+"Real Testing Done/"
+results/
+scratch/
