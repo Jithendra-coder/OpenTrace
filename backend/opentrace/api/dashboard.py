@@ -189,7 +189,23 @@ async def post_analyze(req: AnalyzeRequest) -> JSONResponse:
 
         old_spec = Path(req.old_spec)
         new_spec = Path(req.new_spec)
-        repo = Path(req.repo)
+        repo_str = req.repo.strip()
+
+        # Handle GitHub/Git repository URLs automatically
+        if repo_str.startswith("http://") or repo_str.startswith("https://") or repo_str.startswith("git@"):
+            import subprocess
+            import re
+            repo_name = re.sub(r"[^a-zA-Z0-9_-]", "_", repo_str.split("/")[-1].removesuffix(".git"))
+            target_clone_dir = _state_dir() / "cloned_repos" / repo_name
+            target_clone_dir.parent.mkdir(parents=True, exist_ok=True)
+            if not target_clone_dir.exists():
+                subprocess.run(["git", "clone", "--depth", "1", repo_str, str(target_clone_dir)], check=True, capture_output=True)
+            else:
+                subprocess.run(["git", "-C", str(target_clone_dir), "pull"], capture_output=True)
+            repo = target_clone_dir
+        else:
+            repo = Path(repo_str)
+
         for p in (old_spec, new_spec, repo):
             if not p.exists():
                 raise ValueError(f"Path does not exist: {p}")

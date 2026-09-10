@@ -3,7 +3,8 @@
 <div align="center">
 
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-220%20passed%20(100%25)-success.svg)](https://github.com/)
+[![Tests](https://img.shields.io/badge/tests-220%20passed%20(100%25)-success.svg)](https://github.com/Jithendra-coder/OpenTrace)
+[![GitHub](https://img.shields.io/badge/GitHub-Jithendra--coder%2FOpenTrace-black?logo=github)](https://github.com/Jithendra-coder/OpenTrace)
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 [![Dashboard](https://img.shields.io/badge/dashboard-http%3A%2F%2Flocalhost%3A8000-indigo.svg)](http://localhost:8000)
 
@@ -32,6 +33,10 @@
 
 ### 1. Installation (Requires Python ≥ 3.10)
 ```powershell
+# Clone from GitHub
+git clone https://github.com/Jithendra-coder/OpenTrace.git
+cd OpenTrace
+
 # In PowerShell:
 pip install -e .
 $env:PYTHONIOENCODING = "utf-8"

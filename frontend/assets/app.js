@@ -414,8 +414,8 @@ function renderAnalyze(ws) {
                 <input type="file" webkitdirectory directory class="hidden" onchange="App.handleAnalyzeRepoBrowse(this)" />
               </label>
             </div>
-            <input id="a-repo" class="input font-mono text-[12px]" placeholder="e.g. sample1 or src" value="${repo}" />
-            <div class="text-[11px] text-neutral-400 mt-1">Local path to your codebase directory to scan for affected functions, classes, and endpoints</div>
+            <input id="a-repo" class="input font-mono text-[12px]" placeholder="e.g. sample1, src, or https://github.com/..." value="${repo}" />
+            <div class="text-[11px] text-neutral-400 mt-1">Local codebase path (e.g. <code>sample1</code>) or GitHub repo URL (e.g. <code>https://github.com/Jithendra-coder/OpenTrace.git</code>)</div>
           </div>
 
           <div class="flex items-center gap-3 pt-2">
@@ -784,8 +784,8 @@ function renderGuide(ws) {
         </p>
         <div class="space-y-2">
           <div class="bg-neutral-900 text-neutral-200 p-3 rounded-xl font-mono text-[12px] flex items-center justify-between">
-            <span>git clone https://github.com/opentrace-ai/opentrace.git && cd opentrace</span>
-            <button class="text-neutral-400 hover:text-white text-[11px]" onclick="App.copyToClipboard('git clone https://github.com/opentrace-ai/opentrace.git && cd opentrace')">Copy</button>
+            <span>git clone https://github.com/Jithendra-coder/OpenTrace.git && cd OpenTrace</span>
+            <button class="text-neutral-400 hover:text-white text-[11px]" onclick="App.copyToClipboard('git clone https://github.com/Jithendra-coder/OpenTrace.git && cd OpenTrace')">Copy</button>
           </div>
           <div class="bg-neutral-900 text-neutral-200 p-3 rounded-xl font-mono text-[12px] flex items-center justify-between">
             <span>pip install -e .</span>

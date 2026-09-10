@@ -24,6 +24,11 @@ opentrace = "opentrace.cli.main:main"
 changemesh = "opentrace.cli.main:main"
 specimpact = "opentrace.cli.main:main"
 
+[project.urls]
+Homepage = "https://github.com/Jithendra-coder/OpenTrace"
+Repository = "https://github.com/Jithendra-coder/OpenTrace.git"
+Issues = "https://github.com/Jithendra-coder/OpenTrace/issues"
+
 [project.optional-dependencies]
 dev = [
     "httpx>=0.27,<1.0",
