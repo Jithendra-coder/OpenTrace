@@ -111,29 +111,29 @@ OpenTrace  Analyze
 
 ```
 OpenAPI Spec (old) ──┐
-OpenAPI Spec (new) ──┤  M1–M2: Parse & Compare ──► Breaking Changes Detection
+OpenAPI Spec (new) ──┤  Contract Comparison ──────► Breaking Changes Detection
                      │
-Source Repository ───┤  M3–M6: AST Analysis ──────► Direct + Transitive Impacts
-                     │                               (call graph, blast radius)
+Source Repository ───┤  AST Static Analysis ──────► Direct + Transitive Impacts
+                     │                              (Call Graph, Blast Radius)
                      │
-                     ├── M7–M9: Dataset & ML ──────► Impact ranking baselines
+                     ├── Risk & Impact Baselines ─► Probabilistic Impact Scoring
                      │
-                     ├── M10: Deterministic Engine ► Structured AST patch candidate
+                     ├── AST Migration Engine ────► Deterministic Patch Synthesis
                      │
-                     ├── M11–M13: RouteForge ───────► Strategy routing decision
-                     │                               (SMALL, MEDIUM, STRONG, HUMAN)
+                     ├── RouteForge Strategy ─────► Adaptive Policy Decision
+                     │                              (Economy, Balanced, Critical)
                      │
-                     ├── M14–M15: Patch Synthesizer ► Bounded Migration Patch
+                     ├── Patch Synthesis ─────────► Bounded Code Transformations
                      │
-                     ├── M16: Sandbox Validation ───► Ephemeral test evidence
+                     ├── Ephemeral Sandbox ───────► Test Suite Verification & Proof
                      │
-                     ├── M17–M18: Escalation ────────► Adaptive retry + feedback logs
+                     ├── Escalation System ───────► Adaptive Feedback Persistence
                      │
-                     ├── M19: High-Speed CLI ────────► opentrace analyze/migrate/validate/apply
+                     ├── High-Speed CLI ──────────► opentrace CLI Core Commands
                      │
-                     ├── M21: GitHub Automation ─────► Audited Draft PR (never auto-merge)
+                     ├── GitHub Automation ───────► Audited Draft Pull Request
                      │
-                     └── M22: Noir Web Dashboard ────► http://localhost:8000
+                     └── Web Dashboard ───────────► Real-Time System Telemetry
 ```
 
 ---
@@ -230,19 +230,19 @@ pytest tests/integration/ -q
 ```
 OpenTrace/
 ├── backend/opentrace/       Core Python package
-│   ├── blast_radius/        M1–M6: OpenAPI parser, diff engine, call graph, blast radius
+│   ├── blast_radius/        OpenAPI parser, diff engine, call graph, blast radius
 │   ├── code_analysis/       Python AST parser, TypeScript/JS scanner, HTTP call sites
 │   ├── contracts/           Canonical OpenAPI schema models and normalizer
-│   ├── ml/                  M8–M9: impact-ranking baselines and evaluation
-│   ├── migration/           M10: deterministic AST patch engine
-│   ├── routeforge/          M11–M13: dataset generator, baselines, and learned router
-│   ├── migration_context/   M14: AST context selection
-│   ├── ai_migration/        M15: patch synthesis protocols and provider adapters
-│   ├── validation/          M16: ephemeral sandbox runner & Docker isolation
-│   ├── escalation/          M17–M18: adaptive repair escalation & feedback persistence
-│   ├── cli/                 M19: opentrace CLI (analyze/migrate/validate/apply/pr/status)
-│   ├── github/              M21: GitHub API integration, git commands, PR templates
-│   └── api/                 M22: FastAPI dashboard endpoints
+│   ├── ml/                  Impact-ranking baselines and evaluation
+│   ├── migration/           Deterministic AST patch engine
+│   ├── routeforge/          Dataset generator, baselines, and learned router
+│   ├── migration_context/   AST context selection
+│   ├── ai_migration/        Patch synthesis protocols and provider adapters
+│   ├── validation/          Ephemeral sandbox runner & Docker isolation
+│   ├── escalation/          Adaptive repair escalation & feedback persistence
+│   ├── cli/                 opentrace CLI (analyze/migrate/validate/apply/pr/status)
+│   ├── github/              GitHub API integration, git commands, PR templates
+│   └── api/                 FastAPI dashboard endpoints
 ├── frontend/                Noir single-page dashboard (HTML + Tailwind + Vanilla JS)
 ├── tests/                   Complete 220-test automated suite
 │   ├── unit/                180 unit tests

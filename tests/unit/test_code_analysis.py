@@ -4,7 +4,7 @@ from opentrace.code_analysis import analyze_repository
 from opentrace.code_analysis.models import FileAnalysisState, ResolutionState, SymbolKind
 from opentrace.code_analysis.repository import discover_python_files
 
-FIXTURE_ROOT = Path(__file__).parents[1] / "fixtures" / "python" / "m3_repository"
+FIXTURE_ROOT = Path(__file__).parents[1] / "fixtures" / "python" / "sample_repo"
 
 
 def test_repository_discovery_is_relative_deterministic_and_excludes_generated_dirs(

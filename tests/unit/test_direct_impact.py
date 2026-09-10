@@ -12,7 +12,7 @@ from opentrace.contracts.models import (
 )
 from opentrace.impact import DirectImpactMatcher
 
-FIXTURE_ROOT = Path(__file__).parents[1] / "fixtures" / "python" / "m3_repository"
+FIXTURE_ROOT = Path(__file__).parents[1] / "fixtures" / "python" / "sample_repo"
 DEMO_ROOT = Path(__file__).parents[2] / "demo" / "ecommerce"
 
 

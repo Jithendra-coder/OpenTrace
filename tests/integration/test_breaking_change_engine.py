@@ -10,8 +10,8 @@ FIXTURES = Path(__file__).parents[1] / "fixtures" / "openapi"
 def test_compares_fixture_contracts_through_m1_normalization() -> None:
     parser = OpenAPIParser()
     changes = compare_specifications(
-        parser.parse_file(FIXTURES / "m2_old.yaml"),
-        parser.parse_file(FIXTURES / "m2_new.yaml"),
+        parser.parse_file(FIXTURES / "spec_v1_breaking.yaml"),
+        parser.parse_file(FIXTURES / "spec_v2_breaking.yaml"),
     )
 
     assert {change.category for change in changes} == set(ChangeCategory)

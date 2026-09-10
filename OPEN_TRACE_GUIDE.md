@@ -11,30 +11,30 @@
 
 ## 2. The Core Pipeline Workflow
 
-`	ext
+```text
   ┌───────────────────────┐
   │  OpenAPI v1 vs v2    │
   └──────────┬────────────┘
              │
              ▼
-   [M1→M3: Semantic Diff]  ─── Detects breaking property/endpoint removals
+    [Semantic Diff Engine] ─── Detects breaking property/endpoint removals
              │
              ▼
-  [M4→M6: AST Call Graph]  ─── Traces direct HTTP calls & callers through repo
+    [AST Call Graph]       ─── Traces direct HTTP calls & callers through repo
              │
              ▼
-   [M10→M14: RouteForge]   ─── Evaluates risk policy (Economy, Balanced, Critical)
+    [RouteForge Engine]    ─── Evaluates risk policy (Economy, Balanced, Critical)
              │                 and routes to SMALL, MEDIUM, STRONG, or HUMAN strategy
              ▼
-   [M15: Patch Synthesizer]─── Generates unified multi-file unified diff
+    [Patch Synthesizer]    ─── Generates unified multi-file unified diff
              │
              ▼
-   [M16: Sandbox Runner]   ─── Creates isolated environment, applies patch,
+    [Sandbox Runner]       ─── Creates isolated environment, applies patch,
              │                 and runs test suite (zero host side-effects)
              ▼
-   [M21: GitHub Automation]─── Creates branch opentrace/migration-{id}
+    [GitHub Automation]    ─── Creates branch opentrace/migration-{id}
                                and draft PR with full audit trail
-`
+```
 
 ---
 
