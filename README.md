@@ -6,7 +6,7 @@
 [![Tests](https://img.shields.io/badge/tests-220%20passed%20(100%25)-success.svg)](https://github.com/Jithendra-coder/OpenTrace)
 [![GitHub](https://img.shields.io/badge/GitHub-Jithendra--coder%2FOpenTrace-black?logo=github)](https://github.com/Jithendra-coder/OpenTrace)
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
-[![Dashboard](https://img.shields.io/badge/dashboard-http%3A%2F%2Flocalhost%3A8000-black.svg)](http://localhost:8000)
+[![UI: Dashboard](https://img.shields.io/badge/UI-Single--Page%20Dashboard-black.svg)](#interactive-dashboard)
 
 **Know precisely what an API breaking change breaks — and get a validated migration patch before you ship.**
 
@@ -25,7 +25,7 @@
 3. **Synthesizes** targeted migration patches using the **RouteForge** adaptive strategy selection engine (Economy, Balanced, Critical).
 4. **Validates** patches inside an isolated ephemeral sandbox (copies repo → applies patch → executes regression tests → verifies syntax → cleans up).
 5. **Opens an audited draft GitHub PR** with complete validation evidence, never auto-merging without developer review.
-6. **Visualizes the full impact surface** in an interactive single-page web dashboard at `http://localhost:8000`.
+6. **Visualizes the full impact surface** in an interactive single-page web dashboard with dynamic call graph telemetry.
 
 ---
 
@@ -76,8 +76,6 @@ opentrace status
 ```powershell
 $env:OPENTRACE_WORKSPACE = "."
 uvicorn opentrace.main:app --port 8000
-
-# Open http://localhost:8000 in your browser!
 ```
 
 ### 4. Running OpenTrace on Your Own Repository
@@ -172,7 +170,7 @@ $env:OPENTRACE_WORKSPACE = "."
 uvicorn opentrace.main:app --port 8000
 ```
 
-Navigate to `http://localhost:8000`:
+Launch the dashboard locally via Uvicorn to access all interactive tools:
 
 | Module | Features & Capabilities |
 |---|---|

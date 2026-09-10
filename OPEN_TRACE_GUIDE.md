@@ -113,7 +113,7 @@ opentrace pr --workspace .opentrace
 
 ## 6. Web Dashboard Features
 
-OpenTrace serves an interactive single-page dashboard at http://127.0.0.1:8000:
+OpenTrace serves an interactive single-page dashboard through its local server:
 
 1. **Dashboard Overview**:
    - 4 Metric cards with live telemetry.
