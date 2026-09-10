@@ -150,7 +150,7 @@ function renderOverview(ws) {
     <div class="grid grid-cols-4 gap-4 mb-6">
       ${C.statCard('Breaking Changes', changesCount, a.old_spec ? `${a.old_spec.split(/[/\\]/).pop()} → ${a.new_spec?.split(/[/\\]/).pop()}` : 'No contract diff loaded', 'red')}
       ${C.statCard('Files Affected',   directCount, directCount !== '—' ? `${a.indirect_count ?? 0} indirect callers` : 'Scan repo in Analyze', 'amber')}
-      ${C.statCard('Validation',       valStatus === '—' ? '—' : '', valStatus !== '—' ? C.statusBadge(valStatus) : 'Ephemeral sandbox idle', 'green')}
+      ${C.statCard('Validation',       valStatus === '—' ? '—' : '', valStatus !== '—' ? C.statusBadge(valStatus) : 'Ephemeral sandbox idle', 'slate')}
       ${C.statCard('Open PRs',         prCount, pr ? `Branch: ${pr.branch?.split('/').pop() || '—'}` : 'No PR open', 'slate')}
     </div>
   `;
@@ -328,7 +328,7 @@ function renderAnalyze(ws) {
   const repo    = a?.repo    || 'sample1';
 
   return `
-    <div class="max-w-4xl space-y-6">
+    <div class="max-w-4xl mx-auto space-y-6">
 
       <!-- Preset Sample Selector (1-Click) -->
       <div class="card p-6">
@@ -514,7 +514,7 @@ function renderMigrate(ws) {
   const edits = p?.patch?.edits || [];
 
   return `
-    <div class="max-w-3xl space-y-6">
+    <div class="max-w-3xl mx-auto space-y-6">
       <div class="card p-6">
         ${C.sectionHead('Generate Migration Plan with RouteForge', 'RouteForge evaluates AST repair strategies to resolve breaking contract changes safely.')}
         <div class="mb-5">
@@ -610,7 +610,7 @@ function renderValidate(ws) {
   const p = ws?.plan;
 
   return `
-    <div class="max-w-3xl space-y-6">
+    <div class="max-w-4xl mx-auto space-y-6">
       <div class="card p-6">
         ${C.sectionHead('Sandbox Patch Validation', 'Verify patches in an isolated ephemeral filesystem before applying changes.')}
         <div class="text-[13px] text-neutral-600 mb-5 leading-relaxed">
@@ -680,7 +680,7 @@ function renderPR(ws) {
   const p  = ws?.plan;
 
   return `
-    <div class="max-w-2xl space-y-6">
+    <div class="max-w-3xl mx-auto space-y-6">
       <div class="card p-6">
         ${C.sectionHead('Create GitHub Draft Pull Request', 'Submit generated patches as an audited, reversible draft pull request.')}
 
@@ -711,12 +711,12 @@ function renderPR(ws) {
       </div>
 
       ${pr ? `
-        <div class="card p-6 border-emerald-200 bg-emerald-50/40">
+        <div class="card p-6 border-neutral-200 bg-neutral-50/50">
           <div class="flex items-center justify-between mb-3">
-            <span class="font-bold text-[14px] text-emerald-950">PR Workflow Record</span>
-            <span class="badge badge-green text-[11px]">Dry Run / Audited</span>
+            <span class="font-bold text-[14px] text-black">PR Workflow Record</span>
+            <span class="badge" style="background:#000000;color:#FFFFFF;border:1px solid #000;">Dry Run / Audited</span>
           </div>
-          <div class="space-y-1 font-mono text-[12px] text-emerald-900">
+          <div class="space-y-1 font-mono text-[12px] text-neutral-800">
             <div>Branch: <strong>${pr.branch || 'opentrace/migration-patch'}</strong></div>
             <div>Commits: <strong>${pr.commit_hash || 'local-preview'}</strong></div>
           </div>
@@ -755,7 +755,7 @@ async function runPR() {
 // ── 6. Workflow Guide (Dedicated Step-by-Step Onboarding) ─────────────────────
 function renderGuide(ws) {
   return `
-    <div class="max-w-4xl space-y-6">
+    <div class="max-w-4xl mx-auto space-y-6">
 
       <!-- Introduction Banner -->
       <div class="card p-6 bg-black text-white border-black">
@@ -883,7 +883,7 @@ function renderFeedback(ws) {
   const actionColors = { ACCEPTED: 'green', REJECTED: 'red', SKIPPED: 'gray', DEFERRED: 'amber' };
 
   return `
-    <div class="max-w-4xl space-y-6">
+    <div class="max-w-4xl mx-auto space-y-6">
       <div class="card p-6">
         <div class="flex items-center justify-between mb-3">
           <div>
@@ -937,7 +937,7 @@ function renderSettings(ws) {
   };
 
   return `
-    <div class="max-w-3xl space-y-6">
+    <div class="max-w-3xl mx-auto space-y-6">
 
       <!-- Active Workspace Information -->
       <div class="card p-6">
@@ -1090,7 +1090,7 @@ function renderPlayground(ws) {
   const isAnalyzed = SimState.analyzed;
 
   return `
-    <div class="space-y-6 max-w-4xl">
+    <div class="max-w-4xl mx-auto space-y-6">
       <!-- Step 1: Select API -->
       <div class="card p-6">
         <div class="flex items-center justify-between mb-4">

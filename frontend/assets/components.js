@@ -24,7 +24,7 @@ const C = {
 
   statusBadge(status) {
     const map = {
-      TESTS_PASSED:         ['TESTS PASSED',      'green'],
+      TESTS_PASSED:         ['TESTS PASSED',      'black'],
       TESTS_FAILED:         ['TESTS FAILED',       'red'],
       NO_TESTS_COLLECTED:   ['NO TESTS',           'amber'],
       RUNNER_ERROR:         ['RUNNER ERROR',       'amber'],
@@ -32,7 +32,7 @@ const C = {
       SYNTAX_ERROR:         ['SYNTAX ERROR',       'red'],
       TIMEOUT:              ['TIMEOUT',            'red'],
       SANDBOX_ERROR:        ['SANDBOX ERROR',      'red'],
-      GENERATED:            ['GENERATED',          'green'],
+      GENERATED:            ['GENERATED',          'black'],
       AI_DISABLED:          ['AI DISABLED',        'gray'],
       NOT_REQUIRED:         ['NOT REQUIRED',       'slate'],
     };
@@ -141,14 +141,14 @@ const C = {
   // ── Clean Contract State Card ──────────────────────────────────────────────
   cleanContractCard() {
     return `
-      <div class="card p-6 border-emerald-200 bg-emerald-50/40 mb-5">
+      <div class="card p-6 border-neutral-200 bg-neutral-50/50 mb-5">
         <div class="flex items-center gap-3.5">
-          <div class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 flex-shrink-0">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <div class="w-10 h-10 rounded-xl bg-neutral-900 flex items-center justify-center text-white flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
           <div>
-            <div class="text-[14.5px] font-bold text-emerald-950">Clean Contract &bull; 100% Compatible</div>
-            <div class="text-[12.5px] text-emerald-800 mt-0.5">No breaking API changes detected. All endpoints, schemas, parameters, and types remain fully backward-compatible.</div>
+            <div class="text-[14.5px] font-bold text-black">Clean Contract &bull; 100% Compatible</div>
+            <div class="text-[12.5px] text-neutral-600 mt-0.5">No breaking API changes detected. All endpoints, schemas, parameters, and types remain fully backward-compatible.</div>
           </div>
         </div>
       </div>`;
@@ -161,7 +161,7 @@ const C = {
       return `
         <div class="p-3 rounded-lg text-[12px] mb-4 flex items-center justify-between bg-neutral-50 text-neutral-800 border border-neutral-200">
           <div class="flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span class="w-2 h-2 rounded-full bg-black"></span>
             <span class="font-semibold text-black">Sandbox Regression Suite Verified</span>
             <span class="text-neutral-500 text-[11.5px]">(${v.tests_passed || 0} tests passed in ${v.duration_ms || 0}ms &bull; Zero host mutations)</span>
           </div>
@@ -270,39 +270,52 @@ const C = {
       return '';
     }
 
-    const ep = changes[0] ? `${changes[0].method || 'POST'} ${changes[0].path || '/api'}` : 'API Endpoint';
-    const field = changes[0]?.field ? `(${changes[0].field})` : '';
+    const firstChange = changes[0];
+    const epMethod = firstChange?.method ? firstChange.method.toUpperCase() : 'POST';
+    const epPath = firstChange?.path || '/payments';
+    const ep = `${epMethod} ${epPath}`;
+    const field = firstChange?.field ? `(${firstChange.field})` : '';
+
+    const rootWidth = 220;
+    const directWidth = 220;
+    const indWidth = 200;
+
+    // Adaptive font scaling ensuring endpoint text never overflows
+    const epFontSize = ep.length > 25 ? 9.5 : ep.length > 18 ? 10.5 : 11.5;
 
     const height = Math.max(160, 60 + Math.max(directImpacts.length, 1) * 55 + Math.max(indirectSymbols.length, 0) * 45);
     const nodes = [];
 
-    // Root API Node (Black brand block)
+    // Root API Node (Widened to 220px with centered text & generous padding)
     nodes.push(`
       <g transform="translate(15, 45)" class="cursor-pointer">
-        <rect width="170" height="46" rx="8" fill="#000000" stroke="#27272A" stroke-width="1"/>
-        <text x="85" y="22" fill="#FFFFFF" font-size="11.5" font-weight="700" text-anchor="middle" font-family="Inter, sans-serif">${C._esc(ep)}</text>
-        <text x="85" y="36" fill="#A1A1AA" font-size="9" text-anchor="middle" font-family="monospace">${C._esc(field)}</text>
+        <rect width="${rootWidth}" height="48" rx="8" fill="#000000" stroke="#27272A" stroke-width="1"/>
+        <text x="${rootWidth / 2}" y="22" fill="#FFFFFF" font-size="${epFontSize}" font-weight="700" text-anchor="middle" font-family="monospace">${C._esc(ep)}</text>
+        <text x="${rootWidth / 2}" y="36" fill="#A1A1AA" font-size="9" text-anchor="middle" font-family="monospace">${C._esc(field)}</text>
       </g>
     `);
 
     // Direct nodes (White card with black border + subtle red tag)
+    const directStartX = 15 + rootWidth;
+    const directTargetX = directStartX + 85;
     directImpacts.forEach((d, idx) => {
       const y = 35 + idx * 55;
       const fileText = `${d.file || 'service.py'}${d.line ? ':' + d.line : ''}`;
       const symText = d.symbol ? d.symbol.split('::').pop() : 'handler';
 
       nodes.push(`
-        <path d="M 185 68 C 240 68, 240 ${y + 23}, 280 ${y + 23}" stroke="#18181B" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <g transform="translate(280, ${y})" class="cursor-pointer">
-          <rect width="210" height="46" rx="8" fill="#FFFFFF" stroke="#18181B" stroke-width="1.5" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.04))"/>
-          <text x="12" y="20" fill="#000000" font-size="11" font-weight="700" font-family="monospace">${C._esc(fileText)}</text>
-          <text x="12" y="35" fill="#DC2626" font-size="9.5" font-weight="600" font-family="Inter, sans-serif">${C._esc(symText)} [DIRECT]</text>
+        <path d="M ${directStartX} 69 C ${directStartX + 42} 69, ${directStartX + 42} ${y + 24}, ${directTargetX} ${y + 24}" stroke="#18181B" stroke-width="2" fill="none" stroke-linecap="round"/>
+        <g transform="translate(${directTargetX}, ${y})" class="cursor-pointer">
+          <rect width="${directWidth}" height="48" rx="8" fill="#FFFFFF" stroke="#18181B" stroke-width="1.5" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.04))"/>
+          <text x="14" y="21" fill="#000000" font-size="11" font-weight="700" font-family="monospace">${C._esc(fileText)}</text>
+          <text x="14" y="36" fill="#DC2626" font-size="9.5" font-weight="600" font-family="Inter, sans-serif">${C._esc(symText)} [DIRECT]</text>
         </g>
       `);
     });
 
     // Indirect nodes (Gray-50 card with subtle dashed spline)
-    const midX = 490;
+    const indStartX = directTargetX + directWidth;
+    const indTargetX = indStartX + 70;
     indirectSymbols.forEach((ind, idx) => {
       const y = 35 + idx * 55;
       const indFile = ind.file || 'caller.py';
@@ -310,14 +323,16 @@ const C = {
       const dist = ind.distance || 1;
 
       nodes.push(`
-        <path d="M ${midX} 58 C ${midX + 40} 58, ${midX + 40} ${y + 23}, ${midX + 70} ${y + 23}" stroke="#A1A1AA" stroke-width="1.5" stroke-dasharray="4,4" fill="none"/>
-        <g transform="translate(${midX + 70}, ${y})" class="cursor-pointer">
-          <rect width="190" height="46" rx="8" fill="#FAFAFA" stroke="#E4E4E7" stroke-width="1" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.02))"/>
-          <text x="12" y="20" fill="#18181B" font-size="11" font-weight="600" font-family="monospace">${C._esc(indFile)}</text>
-          <text x="12" y="35" fill="#71717A" font-size="9.5" font-family="Inter, sans-serif">${C._esc(indSym)} (dist: ${dist})</text>
+        <path d="M ${indStartX} 59 C ${indStartX + 35} 59, ${indStartX + 35} ${y + 24}, ${indTargetX} ${y + 24}" stroke="#A1A1AA" stroke-width="1.5" stroke-dasharray="4,4" fill="none"/>
+        <g transform="translate(${indTargetX}, ${y})" class="cursor-pointer">
+          <rect width="${indWidth}" height="48" rx="8" fill="#FAFAFA" stroke="#E4E4E7" stroke-width="1" filter="drop-shadow(0 1px 2px rgba(0,0,0,0.02))"/>
+          <text x="14" y="21" fill="#18181B" font-size="11" font-weight="600" font-family="monospace">${C._esc(indFile)}</text>
+          <text x="14" y="36" fill="#71717A" font-size="9.5" font-family="Inter, sans-serif">${C._esc(indSym)} (dist: ${dist})</text>
         </g>
       `);
     });
+
+    const totalWidth = Math.max(820, indTargetX + indWidth + 30);
 
     return `
       <div class="card p-5 mb-5 overflow-hidden">
@@ -329,7 +344,7 @@ const C = {
           <span class="badge" style="background:#F4F4F5;color:#000000;border:1px solid #E4E4E7;">${directImpacts.length} Direct &bull; ${indirectSymbols.length} Indirect</span>
         </div>
         <div class="overflow-x-auto bg-neutral-50/70 rounded-xl p-3 border border-neutral-200">
-          <svg width="100%" height="${height}" viewBox="0 0 780 ${height}" xmlns="http://www.w3.org/2000/svg" style="min-width:720px;">
+          <svg width="100%" height="${height}" viewBox="0 0 ${totalWidth} ${height}" xmlns="http://www.w3.org/2000/svg" style="min-width:${totalWidth - 40}px;">
             ${nodes.join('')}
           </svg>
         </div>
