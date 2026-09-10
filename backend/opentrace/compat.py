@@ -11,8 +11,14 @@ if not hasattr(enum, "StrEnum"):
             return str(self.value)
 
     enum.StrEnum = StrEnum
-else:
-    import sys
+
+import sys
+import datetime
+
+# Ensure datetime.UTC is available on datetime module for Python 3.10
+if not hasattr(datetime, "UTC"):
+    datetime.UTC = datetime.timezone.utc  # type: ignore[attr-defined]
+
 
 # Ensure backward-compatibility aliases for legacy pickle models and modules
 try:

@@ -11,6 +11,7 @@ jobs:
     name: Core Test Suite (220 Tests)
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ['3.10', '3.11', '3.12', '3.13']
     steps:
