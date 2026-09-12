@@ -81,26 +81,105 @@ uvicorn opentrace.main:app --port 8000
 ### 4. Running OpenTrace on Your Own Repository
 
 ```powershell
-opentrace analyze --old /path/to/old_api.yaml --new /path/to/new_api.yaml --repo /path/to/your_code_repo
+opentrace analyze --old current_api.json --new new_api.json --repo path/to/your_code_repo
 opentrace migrate --policy balanced
 opentrace validate
-opentrace apply
+opentrace apply --yes
 ```
 
-**Expected output from `analyze`:**
+---
+
+## Complete End-to-End Workflow: From Python Code to API Tracking
+
+If you are starting with Python code rather than pre-existing OpenAPI specs, this section walks you through how to generate the API contract JSON files, trace breaking changes, and migrate downstream clients.
+
+### 1. How to Generate OpenAPI JSON Files
+
+OpenTrace compares two states of an API contract:
+- **`current_api.json`** (The baseline before your change)
+- **`new_api.json`** (The updated contract with your new fields or endpoints)
+
+Here is how to generate them depending on your framework or environment:
+
+#### A. FastAPI / Starlette (Python Backend)
+FastAPI automatically generates the OpenAPI schema from your route decorators and Pydantic models.
+
+**Command-line extraction (Zero server startup needed):**
+```bash
+# In Windows CMD or PowerShell:
+python -c "import json; from app import app; json.dump(app.openapi(), open('current_api.json', 'w'), indent=2)"
+```
+*(Replace `from app import app` with your module name, e.g. `from main import app` or `from server import app`).*
+
+**Or fetch from a running local server:**
+```bash
+curl http://localhost:8000/openapi.json -o current_api.json
+```
+
+#### B. Django REST Framework (DRF)
+Using `drf-spectacular` (the modern OpenAPI 3.0 generator for Django):
+```bash
+python manage.py spectacular --file current_api.json
+```
+
+#### C. Flask (Flask-RESTX / Flask-Smorest / apispec)
+```bash
+curl http://localhost:5000/swagger.json -o current_api.json
+```
+
+#### D. Enterprise Services, API Gateways & Distributed Databases
+In large enterprise systems, backend services publish their schemas to an API Gateway (e.g. Kong, AWS API Gateway, Apigee) or central schema registry (SwaggerHub, Backstage, GitHub Releases):
+```bash
+# Fetch production / baseline contract:
+curl -H "Authorization: Bearer $TOKEN" https://api.company.com/v1/openapi.json -o current_api.json
+
+# Fetch staging / branch contract:
+curl -H "Authorization: Bearer $TOKEN" https://api.company.com/v2/openapi.json -o new_api.json
+```
+
+#### E. Automated CI/CD Git Workflow (Zero Manual Exporting)
+In production, developers never manually copy JSON files around. The CI pipeline automatically extracts the contract from `main` and compares it against your pull request branch:
+```bash
+# 1. Checkout baseline branch and export current schema
+git checkout origin/main
+python -c "import json; from app import app; json.dump(app.openapi(), open('current_api.json', 'w'))"
+
+# 2. Checkout your feature branch and export new schema
+git checkout my-feature-branch
+python -c "import json; from app import app; json.dump(app.openapi(), open('new_api.json', 'w'))"
+
+# 3. Analyze impact across all client repositories
+opentrace analyze --old current_api.json --new new_api.json --repo ../downstream-services
+```
+
+---
+
+### 2. The 5-Step Lifecycle Walkthrough
+
+```text
+Step 1: Export Current Contract   ──► python -c "import json; from app import app; json.dump(app.openapi(), open('current_api.json', 'w'))"
+Step 2: Modify Your Python Code   ──► Edit models/routes (e.g. rename 'amount' -> 'total_amount')
+Step 3: Export New Contract       ──► python -c "import json; from app import app; json.dump(app.openapi(), open('new_api.json', 'w'))"
+Step 4: Analyze Impact Surface    ──► opentrace analyze --old current_api.json --new new_api.json --repo ./client_repo
+Step 5: Synthesize & Apply Patch  ──► opentrace migrate && opentrace validate && opentrace apply --yes
+```
+
+**What OpenTrace output looks like on `analyze`:**
 ```
 OpenTrace  Analyze
 ════════════════════════════════════════
   API Changes Detected
-  2 breaking change(s) found.
-  1. POST /payments  BREAKING (field removed)
-  2. POST /payments  BREAKING (type mutation)
+  1 breaking change(s) found.
+  1. POST /payments
+     Location: request.body[application/json].amount
+     request_property_removed
 
   Affected Code
   Direct impacts  : 1
-    [DIRECT]  payment_service.py:7  create_payment
+    [DIRECT]  client.py:6  client.py::process_checkout
 
   ✓ Analysis written → .opentrace/analysis.json
+  → Run  opentrace migrate  to generate a migration plan.
 ```
 
 ---
