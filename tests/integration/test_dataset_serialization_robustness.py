@@ -13,7 +13,7 @@ from opentrace.datasets.serialization import parse_rows, write_artifacts
 
 
 def _historical_dataset() -> ImpactDataset:
-    root = Path("data/m7")
+    root = Path("data/impact_benchmark")
     manifest = DatasetManifest.model_validate_json((root / "manifest.json").read_text())
     rows = parse_rows((root / "canonical.jsonl").read_text())
     scenarios = tuple(

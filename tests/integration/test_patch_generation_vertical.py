@@ -1,4 +1,4 @@
-"""Canonical real M1→M15 candidate-generation vertical slice."""
+"""Canonical real candidate-generation vertical slice."""
 
 from pathlib import Path
 
@@ -47,7 +47,7 @@ def _governed_m13_small_fixture() -> RoutingDecision:
         model_artifact_checksum="m13-governed-fixture",
         context_fingerprint="m13-payment-context-fingerprint",
         explanation=RoutingExplanation(
-            summary="Governed M13 fixture.",
+            summary="Governed routing fixture.",
             applicability=("SMALL applicable",),
             selection_basis="Pre-decision fixture evidence only.",
             evidence_features=("m10_outcome=DETERMINISTIC_CANDIDATE",),

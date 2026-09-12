@@ -1,4 +1,4 @@
-"""M10 deterministic patch and safety tests."""
+"""Deterministic patch and safety tests."""
 
 from pathlib import Path
 

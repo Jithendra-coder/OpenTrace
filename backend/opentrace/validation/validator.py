@@ -1,4 +1,4 @@
-"""M16 patch validator: orchestrates sandbox + runner → ValidationEvidence."""
+"""Patch validator: orchestrates sandbox + runner → ValidationEvidence."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ def validate_patch(
     repository_root: Path | str,
     config: SandboxConfig | None = None,
 ) -> ValidationEvidence:
-    """Run the full M16 validation flow for one proposed patch.
+    """Run the full validation flow for one proposed patch.
 
     Flow:
       1. Create ephemeral temp workspace (copy of repository_root)

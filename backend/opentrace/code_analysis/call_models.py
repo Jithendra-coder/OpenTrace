@@ -1,4 +1,4 @@
-"""Canonical static call-graph artifacts for M5."""
+"""Canonical static call-graph models."""
 
 from __future__ import annotations
 

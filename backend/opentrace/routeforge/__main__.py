@@ -1,4 +1,4 @@
-"""Generate the inspectable M11 RouteForge artifact."""
+"""Generate the inspectable RouteForge scenario dataset."""
 
 from __future__ import annotations
 
@@ -9,11 +9,11 @@ from opentrace.routeforge import RouteForgeConfig, generate_routeforge_dataset, 
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate the offline RouteForge M11 dataset")
+    parser = argparse.ArgumentParser(description="Generate the offline RouteForge scenarios dataset")
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("data") / "routeforge-m11",
+        default=Path("data") / "routeforge_scenarios",
         help="artifact output directory",
     )
     args = parser.parse_args()

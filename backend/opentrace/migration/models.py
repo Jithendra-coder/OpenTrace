@@ -1,4 +1,4 @@
-"""Typed, immutable M10 deterministic migration artifacts."""
+"""Typed, immutable deterministic migration artifacts."""
 
 from __future__ import annotations
 

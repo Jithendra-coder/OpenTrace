@@ -1,4 +1,4 @@
-"""Canonical M4 direct-impact result models."""
+"""Canonical direct-impact result models."""
 
 import json
 

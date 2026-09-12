@@ -1,4 +1,4 @@
-"""Canonical M8 training and validation experiment path."""
+"""Canonical training and validation experiment path."""
 
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ class DevelopmentSplits:
 
     @property
     def test_rows(self) -> tuple[ImpactDatasetRow, ...]:
-        raise RuntimeError("TEST partition is sealed for M9")
+        raise RuntimeError("TEST partition is sealed for formal evaluation")
 
 
 def _read_dataset(dataset_directory: Path) -> ImpactDataset:
@@ -67,13 +67,13 @@ def _read_dataset(dataset_directory: Path) -> ImpactDataset:
     validate_dataset(dataset)
     actual = hashlib.sha256(rows_path.read_bytes()).hexdigest()
     if actual != manifest.content_sha256:
-        raise ValueError("M7 canonical artifact checksum does not match manifest")
+        raise ValueError("Canonical artifact checksum does not match manifest")
     if manifest.schema_version != DATASET_SCHEMA_VERSION or manifest.dataset_version not in {
         DATASET_VERSION,
         DATASET_REMEDIATION_VERSION,
         DATASET_V3_VERSION,
     }:
-        raise ValueError("unsupported M7 dataset version")
+        raise ValueError("unsupported dataset version")
     return dataset
 
 
@@ -120,7 +120,7 @@ def _partition_rows(
 
 
 def load_development_splits(
-    dataset_directory: Path | str = Path("data/m7"), *, split_seed: int = 42
+    dataset_directory: Path | str = Path("data/impact_benchmark"), *, split_seed: int = 42
 ) -> DevelopmentSplits:
     loaded = _read_dataset(Path(dataset_directory))
     dataset = (
@@ -156,7 +156,7 @@ def load_development_splits(
             integrity.validation_test_migration_overlap,
         )
     ):
-        raise ValueError("migration groups cross M8 partitions")
+        raise ValueError("migration groups cross partitions")
     return DevelopmentSplits(tuple(train), tuple(validation), integrity)
 
 
@@ -213,7 +213,7 @@ def _experiment(
         metrics=metrics,
         interpretation=interpretation,
         limitations=(
-            "Validation/development metrics only; TEST is sealed for M9.",
+            "Validation/development metrics only; TEST is sealed for formal evaluation.",
             "Dataset is small and synthetic/curated.",
         ),
         artifact_locations=locations,
@@ -221,8 +221,8 @@ def _experiment(
 
 
 def run_m8_experiments(
-    dataset_directory: Path | str = Path("data/m7"),
-    output_directory: Path | str = Path("artifacts/m8"),
+    dataset_directory: Path | str = Path("data/impact_benchmark"),
+    output_directory: Path | str = Path("data/models/impact_ranking"),
     *,
     seed: int = 42,
     split_seed: int = 42,
@@ -262,7 +262,7 @@ def run_m8_experiments(
     )
     heuristic_record = _experiment(
         heuristic_id,
-        "The existing deterministic M4 impact score provides a simple ranking baseline.",
+        "The existing deterministic impact score provides a simple ranking baseline.",
         M8ModelName.HEURISTIC,
         None,
         {"missing_m4_score": 0.0},
@@ -272,7 +272,7 @@ def run_m8_experiments(
         splits.integrity,
         heuristic_metrics,
         (str(heuristic_prediction_path),),
-        "No-training deterministic M4 impact-score ranking.",
+        "No-training deterministic impact-score ranking.",
     )
     records.append(heuristic_record)
     prediction_files.append(str(heuristic_prediction_path))
@@ -291,7 +291,7 @@ def run_m8_experiments(
         ),
         (
             "E3-logistic-heuristics-v1",
-            "Adding named M4/M6 aggregate features may improve ranking while imitating "
+            "Adding named aggregate features may improve ranking while imitating "
             "the heuristic.",
             M8ModelName.LOGISTIC_REGRESSION,
             FeatureSet.STRUCTURAL_HEURISTICS,

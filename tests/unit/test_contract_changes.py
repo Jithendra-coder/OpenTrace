@@ -19,7 +19,7 @@ def _specification(
 ) -> object:
     document: dict[str, object] = {
         "openapi": openapi,
-        "info": {"title": "M2 fixture", "version": "1"},
+        "info": {"title": "Contract fixture", "version": "1"},
         "paths": paths,
     }
     if components is not None:

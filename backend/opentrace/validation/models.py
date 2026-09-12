@@ -1,4 +1,4 @@
-"""M16 models: ValidationEvidence, ValidationStatus, SandboxConfig."""
+"""Validation models: ValidationEvidence, ValidationStatus, SandboxConfig."""
 
 from __future__ import annotations
 
@@ -60,7 +60,7 @@ class SandboxConfig(CanonicalModel):
 class ValidationEvidence(CanonicalModel):
     """Structured, immutable evidence from one isolated validation run.
 
-    Matches the M16 spec output contract:
+    Matches the validation spec output contract:
       patch_applied, syntax_ok, tests_collected, tests_passed,
       tests_failed, timeout, exit_code, failure_summary.
 

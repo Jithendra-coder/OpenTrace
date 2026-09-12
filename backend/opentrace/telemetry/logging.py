@@ -1,4 +1,4 @@
-"""Centralized logging for the M0 application shell."""
+"""Centralized logging for the application shell."""
 
 import logging
 

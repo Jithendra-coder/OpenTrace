@@ -17,7 +17,7 @@ from opentrace.validation import SandboxConfig, ValidationStatus, validate_patch
 
 
 def run_validate(workspace: Path, timeout: int) -> None:
-    """Run M16 sandbox validation on the generated patch."""
+    """Run sandbox validation on the generated patch."""
 
     if not migration_plan_exists(workspace):
         print_error("No migration plan found. Run  opentrace migrate  first.")

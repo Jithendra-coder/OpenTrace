@@ -1,4 +1,4 @@
-"""Canonical real M1→M6→M10 migration path."""
+"""Canonical real migration path."""
 
 from pathlib import Path
 

@@ -1,4 +1,4 @@
-"""Small, deterministic metrics used only by the formal M9 evaluator."""
+"""Small, deterministic metrics used only by the formal evaluator."""
 
 from __future__ import annotations
 

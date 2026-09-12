@@ -1,4 +1,4 @@
-"""M15 provider-neutral generation, safety, and abstention contracts."""
+"""Provider-neutral generation, safety, and abstention contracts."""
 
 from __future__ import annotations
 
@@ -63,7 +63,7 @@ def _decision(strategy: RouteChoice = RouteChoice.SMALL) -> RoutingDecision:
         model_artifact_checksum="fixture-model-checksum",
         context_fingerprint="fixture-context-fingerprint",
         explanation=RoutingExplanation(
-            summary="Governed M13 fixture.",
+            summary="Governed routing fixture.",
             applicability=("SMALL applicable",),
             selection_basis="Pre-decision fixture evidence only.",
             evidence_features=("m10_outcome=DETERMINISTIC_CANDIDATE",),

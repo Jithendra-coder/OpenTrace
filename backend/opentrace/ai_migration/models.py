@@ -1,4 +1,4 @@
-"""Typed, provider-neutral M15 generation contracts."""
+"""Typed, provider-neutral generation contracts."""
 
 from __future__ import annotations
 

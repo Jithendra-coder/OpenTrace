@@ -1,4 +1,4 @@
-"""M14 bounded, provenance-aware migration context selection."""
+"""Bounded, provenance-aware migration context selection."""
 
 from opentrace.migration_context.models import (
     MIGRATION_CONTEXT_SCHEMA_VERSION,

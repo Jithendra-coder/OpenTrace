@@ -1,4 +1,4 @@
-"""M17 escalation engine: finite, evidence-incorporating retry logic."""
+"""Escalation engine: finite, evidence-incorporating retry logic."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ _RETRYABLE_STATUSES = frozenset(
 
 
 class RepairEscalationEngine:
-    """Finite, evidence-incorporating escalation engine for M17.
+    """Finite, evidence-incorporating escalation engine.
 
     Rules:
     - Retries are bounded by EscalationPolicy.max_retries (finite).
@@ -74,8 +74,8 @@ class RepairEscalationEngine:
         """Run the full escalation loop.
 
         Args:
-            context: The bounded MigrationContext from M14.
-            routing_decision: The M13 routing decision.
+            context: The bounded MigrationContext.
+            routing_decision: The routing decision.
             configuration: AI provider configuration.
             repository_root: Path to the source repository (never mutated).
             provider: The generation provider.

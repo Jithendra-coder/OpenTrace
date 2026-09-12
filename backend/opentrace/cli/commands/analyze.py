@@ -21,7 +21,7 @@ def run_analyze(
     repo: Path,
     output_dir: Path,
 ) -> None:
-    """Run M1→M6 analysis pipeline and write results to .opentrace/analysis.json."""
+    """Run analysis pipeline and write results to .opentrace/analysis.json."""
 
     # --- Auto-resolve paths: check current dir, then fallback to repository root ---
     repo_root = Path(__file__).resolve().parents[4]
@@ -45,7 +45,7 @@ def run_analyze(
     print()
 
     # --- Run pipeline ---
-    print(f"  Running analysis pipeline (M1→M6)...")
+    print(f"  Running analysis pipeline...")
     try:
         blast = analyze_vertical_slice(old_spec, new_spec, repo)
     except Exception as exc:

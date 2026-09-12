@@ -1,4 +1,4 @@
-"""M7 deterministic scenario generation and real M1-M6 feature extraction."""
+"""Deterministic scenario generation and impact feature extraction."""
 
 from __future__ import annotations
 
@@ -59,7 +59,7 @@ class DatasetGenerator:
         return ImpactDataset(manifest=manifest, scenarios=canonical_scenarios, rows=tuple(rows))
 
     def _run_scenario(self, scenario: ScenarioDefinition) -> list[ImpactDatasetRow]:
-        with tempfile.TemporaryDirectory(prefix="opentrace-m7-") as directory:
+        with tempfile.TemporaryDirectory(prefix="opentrace-dataset-") as directory:
             root = Path(directory)
             old_spec = root / "old.json"
             new_spec = root / "new.json"
@@ -85,10 +85,10 @@ class DatasetGenerator:
         symbol: CodeSymbol,
         truth: dict[str, GroundTruthTarget],
     ) -> ImpactDatasetRow:
-        # The result/change types are concrete M1-M6 objects; keeping this helper
+        # The result/change types are concrete analysis objects; keeping this helper
         # local avoids duplicating their domain models in the dataset package.
         if result.graph is None:
-            raise ValueError("M6 result must include its static call graph")
+            raise ValueError("Blast radius result must include its static call graph")
         direct: DirectImpact | None = (
             next(
                 impact
@@ -286,7 +286,7 @@ def _features(
     graph_distance = impacted.distance if impacted is not None else None
     graph = result.graph
     if graph is None:
-        raise ValueError("M6 result must include its static call graph")
+        raise ValueError("Blast radius result must include its static call graph")
     direct_callers, upstream_callers = _caller_counts(graph, symbol_id)
     return DatasetFeatures(
         change_category=change.category.value,

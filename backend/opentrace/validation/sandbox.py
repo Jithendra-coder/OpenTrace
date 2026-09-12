@@ -1,4 +1,4 @@
-"""M16 sandbox: ephemeral workspace creation, patch application, and cleanup."""
+"""Validation sandbox: ephemeral workspace creation, patch application, and cleanup."""
 
 from __future__ import annotations
 

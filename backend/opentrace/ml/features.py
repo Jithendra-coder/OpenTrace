@@ -1,4 +1,4 @@
-"""Explicit, train-fitted M8 feature schemas and preprocessing."""
+"""Explicit, train-fitted feature schemas and preprocessing."""
 
 from __future__ import annotations
 
@@ -139,11 +139,11 @@ class FeatureEncoder:
 
     def fit(self, rows: tuple[ImpactDatasetRow, ...] | list[ImpactDatasetRow]) -> FeatureEncoder:
         if not rows:
-            raise ValueError("cannot fit M8 features on an empty TRAIN partition")
+            raise ValueError("cannot fit features on an empty TRAIN partition")
         expected = set(feature_names(self.feature_set))
         matrices = [row_feature_values(row, self.feature_set) for row in rows]
         if any(set(values) != expected for values in matrices):
-            raise ValueError("row feature values do not match the explicit M8 allowlist")
+            raise ValueError("row feature values do not match the explicit feature allowlist")
         numeric_names = _numeric_feature_names(self.feature_set)
         numeric = np.array(
             [
@@ -185,11 +185,11 @@ class FeatureEncoder:
 
     def transform(self, rows: tuple[ImpactDatasetRow, ...] | list[ImpactDatasetRow]) -> np.ndarray:
         if self._categorical is None or self._numeric_means is None:
-            raise ValueError("M8 feature encoder must be fitted on TRAIN before transform")
+            raise ValueError("Feature encoder must be fitted on TRAIN before transform")
         matrices = [row_feature_values(row, self.feature_set) for row in rows]
         expected = set(feature_names(self.feature_set))
         if any(set(values) != expected for values in matrices):
-            raise ValueError("row feature values do not match the explicit M8 allowlist")
+            raise ValueError("row feature values do not match the explicit feature allowlist")
         numeric_names = _numeric_feature_names(self.feature_set)
         numeric = np.array(
             [
@@ -218,7 +218,7 @@ class FeatureEncoder:
     @property
     def output_feature_names(self) -> tuple[str, ...]:
         if not self._feature_names:
-            raise ValueError("M8 feature encoder must be fitted before reading feature names")
+            raise ValueError("Feature encoder must be fitted before reading feature names")
         return self._feature_names
 
     def metadata(self) -> dict[str, object]:

@@ -1,4 +1,4 @@
-"""Canonical real M1→M14 MigrationContext vertical slice."""
+"""Canonical real MigrationContext vertical slice."""
 
 from pathlib import Path
 
@@ -21,7 +21,7 @@ DEMO = ROOT / "demo" / "ecommerce"
 
 
 def _governed_m13_small_fixture() -> RoutingDecision:
-    """A non-oracle M13 decision fixture; M14 must consume it without rerouting."""
+    """A non-oracle route decision fixture; migration context must consume it without rerouting."""
 
     return RoutingDecision(
         decision_id="m13-governed-payment-small",
@@ -48,7 +48,7 @@ def _governed_m13_small_fixture() -> RoutingDecision:
         model_artifact_checksum="m13-governed-fixture",
         context_fingerprint="m13-payment-context-fingerprint",
         explanation=RoutingExplanation(
-            summary="Governed M13 fixture.",
+            summary="Governed routing fixture.",
             applicability=("SMALL applicable",),
             selection_basis="Pre-decision fixture evidence only.",
             evidence_features=("m10_outcome=DETERMINISTIC_CANDIDATE",),

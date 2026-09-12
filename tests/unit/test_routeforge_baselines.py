@@ -1,4 +1,4 @@
-"""M12 RouteForge baseline policy, leakage, and reproducibility tests."""
+"""RouteForge baseline policy, leakage, and reproducibility tests."""
 
 from pathlib import Path
 
@@ -14,7 +14,7 @@ from opentrace.routeforge.serialization import read_artifacts
 
 @pytest.fixture(scope="module")
 def m12_result():
-    return run_m12_baselines(Path("data/routeforge-m11"), None)
+    return run_m12_baselines(Path("data/routeforge_scenarios"), None)
 
 
 def test_required_baselines_and_development_semantics(m12_result) -> None:
@@ -50,7 +50,7 @@ def test_train_support_and_outcome_states_are_preserved(m12_result) -> None:
 
 
 def test_unknown_not_applicable_and_no_feasible_remain_explicit(m12_result) -> None:
-    dataset = read_artifacts(Path("data/routeforge-m11"))
+    dataset = read_artifacts(Path("data/routeforge_scenarios"))
     no_feasible = next(
         scenario for scenario in dataset.scenarios if scenario.scenario_id == "scenario-007"
     )
@@ -71,7 +71,7 @@ def test_unknown_not_applicable_and_no_feasible_remain_explicit(m12_result) -> N
 
 
 def test_feature_allowlist_and_train_only_preprocessing() -> None:
-    dataset = read_artifacts(Path("data/routeforge-m11"))
+    dataset = read_artifacts(Path("data/routeforge_scenarios"))
     train_rows = tuple(
         row
         for row in dataset.rows
@@ -103,5 +103,5 @@ def test_group_safe_splits_test_sealing_and_reproducibility(m12_result) -> None:
     summary = m12_result.summary()
     assert summary["test_used_for_model_selection"] is False
     assert summary["test_evaluated"] is False
-    repeat = run_m12_baselines(Path("data/routeforge-m11"), None)
+    repeat = run_m12_baselines(Path("data/routeforge_scenarios"), None)
     assert repeat.reproducibility_fingerprint == m12_result.reproducibility_fingerprint

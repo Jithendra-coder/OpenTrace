@@ -1,4 +1,4 @@
-"""Deterministic M6 blast-radius propagation and heuristic risk."""
+"""Deterministic blast-radius propagation and heuristic risk."""
 
 from opentrace.blast_radius.models import (
     BlastRadius,

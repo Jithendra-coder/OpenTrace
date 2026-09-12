@@ -1,4 +1,4 @@
-"""Gate C evidence dataset generation and evaluation over frozen M13 semantics."""
+"""Gate C evidence dataset generation and evaluation over frozen router semantics."""
 
 from __future__ import annotations
 
@@ -283,7 +283,7 @@ def _oracle_spec(
             latency=None,
             quality=None,
             candidate_generated=True,
-            notes=f"Observed M10 candidate in fresh scenario {index}; validation is not available.",
+            notes=f"Observed deterministic candidate in fresh scenario {index}; validation is not available.",
         )
     return _GateCOutcomeSpec(
         status=status if not no_repair else StrategyOutcomeStatus.NOT_APPLICABLE,

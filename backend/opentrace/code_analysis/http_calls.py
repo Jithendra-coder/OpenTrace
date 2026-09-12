@@ -1,4 +1,4 @@
-"""HTTP extraction compatibility surface for M3."""
+"""HTTP extraction compatibility surface."""
 
 from opentrace.code_analysis.ast_parser import parse_source
 

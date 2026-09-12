@@ -1,4 +1,4 @@
-"""M16 vertical slice: real M1→M15 evidence composed with M16 validation."""
+"""Validation vertical slice: evidence composed with isolated sandbox validation."""
 
 from __future__ import annotations
 
@@ -29,10 +29,10 @@ def analyze_and_validate_vertical_slice(
     policy: GenerationPolicy | None = None,
     sandbox_config: SandboxConfig | None = None,
 ) -> tuple[MigrationGenerationResult, ValidationEvidence | None]:
-    """Run the real M1→M16 path without mutating the source repository.
+    """Run the candidate generation and validation path without mutating the source repository.
 
     Returns:
-        generation_result: The M15 generation result.
+        generation_result: The generation result.
         validation_evidence: ValidationEvidence if a patch was generated,
                              None if no patch was produced.
 

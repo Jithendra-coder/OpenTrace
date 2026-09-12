@@ -1,4 +1,4 @@
-"""M17 + M18 escalation and feedback module."""
+"""Escalation and feedback module."""
 
 from opentrace.escalation.engine import RepairEscalationEngine
 from opentrace.escalation.feedback import load_feedback_records, write_feedback_record

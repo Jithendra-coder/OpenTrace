@@ -1,4 +1,4 @@
-"""Bounded reverse propagation over the M5 caller graph."""
+"""Bounded reverse propagation over the caller graph."""
 
 from __future__ import annotations
 
@@ -39,7 +39,7 @@ class _Path:
 
 
 class BlastRadiusPropagator:
-    """Propagate M4 direct seeds to upstream callers using reverse CALLS edges."""
+    """Propagate direct impact seeds to upstream callers using reverse CALLS edges."""
 
     def __init__(
         self,
@@ -275,7 +275,7 @@ def _propagation_evidence(
         distance=path.distance,
         resolution_state=path.resolution_state,
         explanation=(
-            "Direct M4 evidence seeds this symbol."
+            "Direct impact evidence seeds this symbol."
             if path.distance == 0
             else f"Static CALLS path reaches the direct symbol in {path.distance} upstream edge(s)."
         ),

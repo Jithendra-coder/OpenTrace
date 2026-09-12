@@ -1,4 +1,4 @@
-"""Formal M9 held-out evaluation and calibration boundary."""
+"""Formal held-out evaluation and calibration boundary."""
 
 from opentrace.evaluation.models import M9RunResult
 from opentrace.evaluation.pipeline import run_m9_evaluation

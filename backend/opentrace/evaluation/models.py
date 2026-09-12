@@ -1,4 +1,4 @@
-"""Typed handles for immutable M9 evaluation artifacts."""
+"""Typed handles for immutable evaluation artifacts."""
 
 from __future__ import annotations
 

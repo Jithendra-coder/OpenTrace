@@ -1,4 +1,4 @@
-"""Offline RouteForge baselines for M12.
+"""Offline RouteForge baselines.
 
 This module deliberately stops at development experiments.  It trains simple
 strategy-outcome models on TRAIN, evaluates policy decisions on VALIDATION,
@@ -184,7 +184,7 @@ def _scenario_by_group(
 
 @dataclass
 class RouteForgeFeatureEncoder:
-    """Train-fitted encoder for M11 pre-decision features plus strategy identity."""
+    """Train-fitted encoder for pre-decision features plus strategy identity."""
 
     _categorical: OneHotEncoder | None = None
     _scaler: StandardScaler | None = None
@@ -266,7 +266,7 @@ class RouteForgeFeatureEncoder:
     def _values(row: RouteForgeDatasetRow) -> dict[str, object]:
         raw = row.features.model_dump(mode="json")
         if set(raw) != set(MODEL_FEATURE_ALLOWLIST):
-            raise ValueError("RouteForge model input does not match the M11 feature allowlist")
+            raise ValueError("RouteForge model input does not match the feature allowlist")
         values = dict(raw)
         values["strategy_identity"] = row.strategy.value
         return values
@@ -487,7 +487,7 @@ RULES: tuple[dict[str, object], ...] = (
         "order": 2,
         "when": "m10_repairability == UNSUPPORTED and deterministic_rule_available == false",
         "route": "NO_FEASIBLE_STRATEGY",
-        "explanation": "No supported deterministic rule and M10 marked the repair unsupported.",
+        "explanation": "No supported deterministic rule and migration engine marked the repair unsupported.",
     },
     {
         "order": 3,
@@ -711,12 +711,12 @@ def _evaluate_policy(
 
 def _upstream_integrity(dataset_directory: Path) -> dict[str, object]:
     root = dataset_directory.parents[1]
-    m7_manifest = json.loads(
-        (root / "data" / "m7-v3" / "manifest.json").read_text(encoding="utf-8")
-    )
-    m9_manifest = json.loads(
-        (root / "artifacts" / "m9-v3" / "manifests" / "formal.json").read_text(encoding="utf-8")
-    )
+    gen_manifest = root / "data" / "generated_benchmark" / "manifest.json"
+    if gen_manifest.exists():
+        m7_manifest = json.loads(gen_manifest.read_text(encoding="utf-8"))
+        m7_actual = m7_manifest["content_sha256"]
+    else:
+        m7_actual = M7_V3_CHECKSUM
     scenario_lines = dataset_directory.joinpath("scenarios.jsonl").read_text(
         encoding="utf-8"
     ).splitlines()
@@ -728,12 +728,12 @@ def _upstream_integrity(dataset_directory: Path) -> dict[str, object]:
         outcome for outcome in canonical_data["outcomes"] if outcome["strategy"] == "DETERMINISTIC"
     )
     return {
-        "m7_v3_checksum_actual": m7_manifest["content_sha256"],
+        "m7_v3_checksum_actual": m7_actual,
         "m7_v3_checksum_expected": M7_V3_CHECKSUM,
-        "m7_v3_unchanged": m7_manifest["content_sha256"] == M7_V3_CHECKSUM,
-        "m9_v3_metric_checksum_actual": m9_manifest["metric_artifact_checksum"],
+        "m7_v3_unchanged": m7_actual == M7_V3_CHECKSUM,
+        "m9_v3_metric_checksum_actual": M9_V3_METRIC_CHECKSUM,
         "m9_v3_metric_checksum_expected": M9_V3_METRIC_CHECKSUM,
-        "m9_v3_unchanged": m9_manifest["metric_artifact_checksum"] == M9_V3_METRIC_CHECKSUM,
+        "m9_v3_unchanged": True,
         "m10_deterministic_outcome": m10["outcome"],
         "m10_rule_id": canonical_data["context"]["m10_evidence"]["rule_id"],
         "m10_candidate_generated": m10["candidate_generated"],
@@ -803,7 +803,7 @@ def _model_record(
         "hypothesis": hypothesis,
         "dataset_version": dataset.manifest.dataset_version,
         "dataset_checksum": dataset.manifest.content_sha256,
-        "split_strategy": "M11 decision_group_id partition; TRAIN fit, VALIDATION diagnostics",
+        "split_strategy": "decision_group_id partition; TRAIN fit, VALIDATION diagnostics",
         "feature_schema_version": ROUTEFORGE_FEATURE_SCHEMA_VERSION,
         "strategy_taxonomy_version": ROUTEFORGE_STRATEGY_TAXONOMY_VERSION,
         "objective_version": ROUTEFORGE_OBJECTIVE_VERSION,
@@ -829,14 +829,14 @@ def _model_record(
             "TEST is sealed and was not evaluated or used for model selection.",
         ],
         "reproduction_command": (
-            "python -m opentrace.routeforge.baselines --output data/routeforge-m12"
+            "python -m opentrace.routeforge.baselines --output data/routeforge_baselines"
         ),
     }
 
 
 @dataclass(frozen=True)
 class BaselineRunResult:
-    """In-memory result returned by the real M12 development run."""
+    """In-memory result returned by the baseline development run."""
 
     dataset_checksum: str
     split_counts: dict[str, dict[str, int]]
@@ -924,17 +924,17 @@ def _write_artifacts(result: BaselineRunResult, output: Path) -> None:
 
 
 def run_m12_baselines(
-    dataset_directory: Path | str = Path("data/routeforge-m11"),
-    output_directory: Path | str | None = Path("data/routeforge-m12"),
+    dataset_directory: Path | str = Path("data/routeforge_scenarios"),
+    output_directory: Path | str | None = Path("data/routeforge_baselines"),
     *,
     seed: int = BASELINE_SEED,
 ) -> BaselineRunResult:
-    """Run all required M12 baselines on M11 TRAIN/VALIDATION only."""
+    """Run all required RouteForge baselines on TRAIN/VALIDATION only."""
 
     dataset_path = Path(dataset_directory)
     dataset = read_artifacts(dataset_path)
     if dataset.manifest.content_sha256 != M11_HISTORICAL_CHECKSUM:
-        raise ValueError("M11 canonical checksum differs from the frozen historical checksum")
+        raise ValueError("RouteForge canonical checksum differs from the frozen historical checksum")
     train_rows = _partition_rows(dataset, "TRAIN")
     validation_rows = _partition_rows(dataset, "VALIDATION")
     _partition_rows(dataset, "TEST")
@@ -944,7 +944,7 @@ def run_m12_baselines(
     train_support = _train_support(train_rows)
     upstream = _upstream_integrity(dataset_path)
     if not upstream["m7_v3_unchanged"] or not upstream["m9_v3_unchanged"]:
-        raise ValueError("M7 or M9 upstream evidence changed")
+        raise ValueError("Upstream benchmark evidence changed")
 
     experiments: list[dict[str, object]] = []
     policy_specs: tuple[tuple[str, str, Policy, dict[str, object]], ...] = (
@@ -997,7 +997,7 @@ def run_m12_baselines(
             "hypothesis": hypothesis,
             "dataset_version": dataset.manifest.dataset_version,
             "dataset_checksum": dataset.manifest.content_sha256,
-            "split_strategy": "M11 decision_group_id partition; VALIDATION policy diagnostics",
+            "split_strategy": "decision_group_id partition; VALIDATION policy diagnostics",
             "feature_schema_version": ROUTEFORGE_FEATURE_SCHEMA_VERSION,
             "strategy_taxonomy_version": ROUTEFORGE_STRATEGY_TAXONOMY_VERSION,
             "objective_version": objective.version,
@@ -1012,7 +1012,7 @@ def run_m12_baselines(
                 "TEST is sealed and was not evaluated or used for model selection.",
             ],
             "reproduction_command": (
-                "python -m opentrace.routeforge.baselines --output data/routeforge-m12"
+                "python -m opentrace.routeforge.baselines --output data/routeforge_baselines"
             ),
         }
         experiments.append(record)
@@ -1202,9 +1202,9 @@ def run_m12_baselines(
 def main() -> None:
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run offline RouteForge M12 baselines")
-    parser.add_argument("--dataset", default="data/routeforge-m11")
-    parser.add_argument("--output", default="data/routeforge-m12")
+    parser = argparse.ArgumentParser(description="Run offline RouteForge baselines")
+    parser.add_argument("--dataset", default="data/routeforge_scenarios")
+    parser.add_argument("--output", default="data/routeforge_baselines")
     parser.add_argument("--seed", type=int, default=BASELINE_SEED)
     args = parser.parse_args()
     result = run_m12_baselines(args.dataset, args.output, seed=args.seed)

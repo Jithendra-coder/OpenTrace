@@ -1,4 +1,4 @@
-"""M21 GitHub PR integration tests — git helpers, PR template, CLI --dry-run."""
+"""GitHub PR integration tests — git helpers, PR template, CLI --dry-run."""
 
 from __future__ import annotations
 

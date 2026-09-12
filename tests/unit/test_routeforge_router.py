@@ -1,4 +1,4 @@
-"""M13 learned RouteForge router contracts and adversarial checks."""
+"""RouteForge router contracts and adversarial checks."""
 
 import json
 from pathlib import Path
@@ -27,14 +27,14 @@ from opentrace.routeforge.serialization import read_artifacts
 def m13_run(tmp_path_factory):
     output = tmp_path_factory.mktemp("m13")
     return run_m13_router(
-        Path("data/routeforge-m11"),
-        Path("data/routeforge-m12"),
+        Path("data/routeforge_scenarios"),
+        Path("data/routeforge_baselines"),
         output,
     )
 
 
 def _scenario(scenario_id: str) -> RouteForgeScenario:
-    dataset = read_artifacts(Path("data/routeforge-m11"))
+    dataset = read_artifacts(Path("data/routeforge_scenarios"))
     return next(item for item in dataset.scenarios if item.scenario_id == scenario_id)
 
 
@@ -43,7 +43,7 @@ def test_router_contracts_and_special_states(m13_run) -> None:
     assert decisions["scenario-006"].selected_strategy is RouteChoice.NO_AI
 
     scenario = _scenario("scenario-007")
-    artifact_path = Path("data/routeforge-m13/model.json")
+    artifact_path = Path("data/routeforge_router/model.json")
     decision = RouteForgeRouter.from_artifact(artifact_path).route(
         RoutingRequest(context=scenario.context, objective=RoutingObjective())
     )
@@ -59,7 +59,7 @@ def test_router_contracts_and_special_states(m13_run) -> None:
 
 def test_no_feasible_requires_explicit_no_applicable_condition(monkeypatch) -> None:
     scenario = _scenario("scenario-001")
-    router = RouteForgeRouter.from_artifact(Path("data/routeforge-m13/model.json"))
+    router = RouteForgeRouter.from_artifact(Path("data/routeforge_router/model.json"))
 
     def no_applicable_strategies(_context):
         return {
@@ -83,9 +83,9 @@ def test_primary_model_schema_and_train_only_artifact(m13_run) -> None:
     assert summary["test_metrics"] == (
         "TEST METRICS NOT COMPUTED — DATASET INADEQUATE FOR GATE C EVIDENCE"
     )
-    artifact, checksum = load_model_artifact(Path("data/routeforge-m13/model.json"))
+    artifact, checksum = load_model_artifact(Path("data/routeforge_router/model.json"))
     manifest = json.loads(
-        Path("data/routeforge-m13/manifest.json").read_text(encoding="utf-8")
+        Path("data/routeforge_router/manifest.json").read_text(encoding="utf-8")
     )
     assert artifact.model_version == ROUTEFORGE_SCORER_VERSION
     assert artifact.training_partition == "TRAIN"
@@ -106,13 +106,13 @@ def test_oracle_field_injection_and_version_mismatch_are_rejected() -> None:
         objective=RoutingObjective().model_copy(update={"version": "routeforge-objective-v2"}),
     )
     with pytest.raises(ValueError, match="objective mismatch"):
-        RouteForgeRouter.from_artifact(Path("data/routeforge-m13/model.json")).route(request)
+        RouteForgeRouter.from_artifact(Path("data/routeforge_router/model.json")).route(request)
 
 
 def test_unknown_categories_are_safe_and_ai_required_keeps_ai_strategies_applicable() -> None:
-    dataset = read_artifacts(Path("data/routeforge-m11"))
+    dataset = read_artifacts(Path("data/routeforge_scenarios"))
     scenarios = {scenario.scenario_id: scenario for scenario in dataset.scenarios}
-    router = RouteForgeRouter.from_artifact(Path("data/routeforge-m13/model.json"))
+    router = RouteForgeRouter.from_artifact(Path("data/routeforge_router/model.json"))
 
     altered = scenarios["scenario-001"].context.model_dump(mode="json")
     altered["features"]["change_category"] = "UNSEEN_CATEGORY"
@@ -174,14 +174,14 @@ def test_unknown_categories_are_safe_and_ai_required_keeps_ai_strategies_applica
 
 def test_route_has_no_oracle_evaluation_fields_and_documents_score_only_policy() -> None:
     scenario = _scenario("scenario-007")
-    router = RouteForgeRouter.from_artifact(Path("data/routeforge-m13/model.json"))
+    router = RouteForgeRouter.from_artifact(Path("data/routeforge_router/model.json"))
     decision = router.route(RoutingRequest(context=scenario.context))
     payload = decision.model_dump(mode="json")
     serialized = json.dumps(payload)
     assert "selected_outcome" not in serialized
     assert "synthetic_cost_units" not in serialized
     assert "synthetic_latency_units" not in serialized
-    assert "score-only M13 prototype policy" in decision.explanation.selection_basis
+    assert "score-only prototype policy" in decision.explanation.selection_basis
     assert "post-selection" in decision.explanation.selection_basis
     assert "cost-aware" in " ".join(decision.warnings).lower()
 
@@ -206,8 +206,8 @@ def test_score_ties_and_strong_remain_representable() -> None:
 
 def test_repeated_run_and_explanation_determinism(m13_run, tmp_path_factory) -> None:
     repeat = run_m13_router(
-        Path("data/routeforge-m11"),
-        Path("data/routeforge-m12"),
+        Path("data/routeforge_scenarios"),
+        Path("data/routeforge_baselines"),
         tmp_path_factory.mktemp("m13-repeat"),
     )
     assert repeat.reproducibility_fingerprint == m13_run.reproducibility_fingerprint
@@ -220,7 +220,7 @@ def test_repeated_run_and_explanation_determinism(m13_run, tmp_path_factory) -> 
 
 
 def test_checked_in_m13_artifact_has_no_test_predictions() -> None:
-    root = Path("data/routeforge-m13")
+    root = Path("data/routeforge_router")
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["validation_decision_count"] == 3
     assert manifest["test_evaluated"] is False

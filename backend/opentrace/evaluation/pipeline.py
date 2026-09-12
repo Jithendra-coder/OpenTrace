@@ -1,4 +1,4 @@
-"""M9 formal evaluator: frozen baselines, held-out TEST, and calibration."""
+"""Formal evaluator: frozen baselines, held-out TEST, and calibration."""
 
 from __future__ import annotations
 
@@ -85,7 +85,7 @@ def _write_immutable(path: Path, value: object | bytes) -> None:
     if path.exists():
         if path.read_bytes() != content:
             raise FileExistsError(
-                f"immutable M9 artifact already exists with different content: {path}"
+                f"immutable artifact already exists with different content: {path}"
             )
         return
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -105,7 +105,7 @@ def _manifest_only(dataset_directory: Path) -> DatasetManifest:
         or manifest.dataset_version
         not in {DATASET_VERSION, DATASET_REMEDIATION_VERSION, DATASET_V3_VERSION}
     ):
-        raise ValueError("unsupported M7 dataset version")
+        raise ValueError("unsupported dataset version")
     return manifest
 
 
@@ -178,7 +178,7 @@ def _formal_splits(dataset_directory: Path, split_seed: int) -> FormalSplits:
         for field in overlap_fields
     }
     if any(migration_overlap.values()):
-        raise ValueError("M9 migration groups cross partitions")
+        raise ValueError("migration groups cross partitions")
     return FormalSplits(
         train=train,
         validation=validation,
@@ -197,22 +197,22 @@ def _formal_splits(dataset_directory: Path, split_seed: int) -> FormalSplits:
     )
 
 
-def _model_metadata(m8_directory: Path, experiment_id: str) -> tuple[dict[str, Any], Path, str]:
-    model_path = (m8_directory / "models" / f"{experiment_id}.pkl").resolve()
-    metadata_path = (m8_directory / "models" / f"{experiment_id}.json").resolve()
-    root = m8_directory.resolve()
+def _model_metadata(model_directory: Path, experiment_id: str) -> tuple[dict[str, Any], Path, str]:
+    model_path = (model_directory / "models" / f"{experiment_id}.pkl").resolve()
+    metadata_path = (model_directory / "models" / f"{experiment_id}.json").resolve()
+    root = model_directory.resolve()
     if root not in model_path.parents or root not in metadata_path.parents:
-        raise ValueError("M8 artifact path escaped the trusted local artifact directory")
+        raise ValueError("artifact path escaped the trusted local artifact directory")
     metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
     if metadata.get("trusted_local_artifact_only") is not True:
-        raise ValueError("M8 model artifact is not marked trusted-local-only")
+        raise ValueError("model artifact is not marked trusted-local-only")
     if (
         metadata.get("training_partition") != "TRAIN"
         or metadata.get("validation_partition") != "VALIDATION"
     ):
-        raise ValueError("M8 model provenance has unexpected partitions")
+        raise ValueError("model provenance has unexpected partitions")
     if metadata.get("test_used") is not False:
-        raise ValueError("M8 model was trained with TEST")
+        raise ValueError("model was trained with TEST")
     return metadata, model_path, _sha256(model_path)
 
 
@@ -233,7 +233,7 @@ def _pre_test_manifest(
         if baseline == "B0_HEURISTIC":
             models[baseline] = {
                 "experiment_id": experiment_id,
-                "artifact": "deterministic M4 impact score",
+                "artifact": "deterministic impact score",
             }
             continue
         metadata, model_path, checksum = _model_metadata(m8_directory, experiment_id)
@@ -268,7 +268,7 @@ def _pre_test_manifest(
             "name": "Logistic Regression",
             "feature_set": "A_STRUCTURAL",
             "reason": (
-                "Pre-registered before TEST: tied for best M8 validation ranking, "
+                "Pre-registered before TEST: tied for best validation ranking, "
                 "simpler and interpretable."
             ),
         },
@@ -306,10 +306,10 @@ def _load_model(
 ) -> FrozenModel:
     metadata, model_path, checksum = _model_metadata(m8_directory, experiment_id)
     if checksum != expected_checksum:
-        raise ValueError(f"M8 model checksum changed after pre-test freeze: {experiment_id}")
+        raise ValueError(f"model checksum changed after pre-test freeze: {experiment_id}")
     metadata_path = (m8_directory / "models" / f"{experiment_id}.json").resolve()
     if _sha256(metadata_path) != expected_metadata_checksum:
-        raise ValueError(f"M8 model metadata changed after pre-test freeze: {experiment_id}")
+        raise ValueError(f"model metadata changed after pre-test freeze: {experiment_id}")
     import sys
     import opentrace
     import opentrace.ml.features
@@ -325,7 +325,7 @@ def _load_model(
         not isinstance(encoder, FeatureEncoder)
         and getattr(encoder, "__class__", None).__name__ != "FeatureEncoder"
     ):
-        raise ValueError(f"invalid trusted M8 model payload: {experiment_id}")
+        raise ValueError(f"invalid trusted model payload: {experiment_id}")
     return FrozenModel(payload["model"], encoder, metadata, checksum)
 
 
@@ -333,7 +333,7 @@ def _scores(frozen: FrozenModel, rows: tuple[ImpactDatasetRow, ...]) -> np.ndarr
     matrix = frozen.encoder.transform(list(rows))
     model = frozen.model
     if not hasattr(model, "predict_proba"):
-        raise ValueError("M9 requires frozen classifiers exposing predict_proba")
+        raise ValueError("Formal evaluation requires frozen classifiers exposing predict_proba")
     values = np.asarray(model.predict_proba(matrix)[:, 1], dtype=float)
     if not np.all(np.isfinite(values)) or np.any(values < 0.0) or np.any(values > 1.0):
         raise ValueError("frozen model emitted an invalid score")
@@ -538,9 +538,9 @@ def _load_git_commit() -> str | None:
 
 
 def run_m9_evaluation(
-    dataset_directory: Path | str = Path("data/m7"),
-    m8_directory: Path | str = Path("artifacts/m8"),
-    output_directory: Path | str = Path("artifacts/m9"),
+    dataset_directory: Path | str = Path("data/impact_benchmark"),
+    m8_directory: Path | str = Path("data/models/impact_ranking"),
+    output_directory: Path | str = Path("data/evaluation_output"),
     *,
     seed: int = MODEL_SEED,
     split_seed: int = SPLIT_SEED,
@@ -551,7 +551,7 @@ def run_m9_evaluation(
     historical_exclusion_fingerprint: str | None = None,
     reproduction_mode: bool = False,
 ) -> M9RunResult:
-    """Run the one formal M9 evaluation, refusing to overwrite final artifacts."""
+    """Run the formal evaluation, refusing to overwrite final artifacts."""
 
     dataset_path = Path(dataset_directory)
     m8_path = Path(m8_directory)
@@ -559,7 +559,7 @@ def run_m9_evaluation(
     formal_manifest_path = output / "manifests" / "formal.json"
     if formal_manifest_path.exists():
         raise FileExistsError(
-            "formal M9 artifacts are immutable; use a new output directory to reproduce"
+            "formal evaluation artifacts are immutable; use a new output directory to reproduce"
         )
     chronology = ChronologyLog.load(chronology_path) if chronology_path is not None else None
     if (
@@ -593,7 +593,7 @@ def run_m9_evaluation(
         )
     splits = _formal_splits(dataset_path, split_seed)
     if splits.integrity["TEST"]["rows"] == 0:
-        raise ValueError("M9 requires a non-empty TEST partition")
+        raise ValueError("Formal evaluation requires a non-empty TEST partition")
 
     frozen_models: dict[str, FrozenModel] = {}
     for baseline in tuple(BASELINE_IDS)[1:]:
@@ -650,7 +650,7 @@ def run_m9_evaluation(
         "artifact_checksum": _sha256(calibrator_path),
         "test_used_for_fit": False,
         "limitation": (
-            "VALIDATION was reused after M8 model selection; TEST remained evaluation-only."
+            "VALIDATION was reused after model selection; TEST remained evaluation-only."
         ),
     }
     calibration_metadata_path = calibration_dir / "platt-v1.json"
@@ -855,7 +855,7 @@ def run_m9_evaluation(
             ),
             "Mutation families and API families are imbalanced.",
             (
-                "VALIDATION was reused for M8 model selection and M9 calibration; TEST remained "
+                "VALIDATION was reused for model selection and calibration; TEST remained "
                 "independently held out."
             ),
         ],

@@ -1,4 +1,4 @@
-"""M16 isolated patch validation module."""
+"""Isolated patch validation module."""
 
 from opentrace.validation.models import (
     SANDBOX_CONFIG_VERSION,

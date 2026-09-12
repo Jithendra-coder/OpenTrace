@@ -1,4 +1,4 @@
-"""M16 integration test: real M1→M16 vertical slice with sandbox validation."""
+"""Integration test: real vertical slice with sandbox validation."""
 
 from __future__ import annotations
 
@@ -52,7 +52,7 @@ def _governed_m13_small_fixture() -> RoutingDecision:
         model_artifact_checksum="m13-governed-fixture-m16",
         context_fingerprint="m13-payment-context-fingerprint-m16",
         explanation=RoutingExplanation(
-            summary="Governed M13 fixture for M16 validation test.",
+            summary="Governed routing fixture for validation test.",
             applicability=("SMALL applicable",),
             selection_basis="Pre-decision fixture evidence only.",
             evidence_features=("m10_outcome=DETERMINISTIC_CANDIDATE",),
@@ -62,7 +62,7 @@ def _governed_m13_small_fixture() -> RoutingDecision:
 
 
 def test_real_m1_to_m16_generates_and_validates_without_source_mutation() -> None:
-    """Real M1→M16 path: generation + sandbox validation, no source repo mutation."""
+    """Real migration path: generation + sandbox validation, no source repo mutation."""
     before = {p.name: p.read_text(encoding="utf-8") for p in DEMO.glob("*.py")}
 
     provider = DeterministicFakeProvider()
@@ -81,7 +81,7 @@ def test_real_m1_to_m16_generates_and_validates_without_source_mutation() -> Non
     after = {p.name: p.read_text(encoding="utf-8") for p in DEMO.glob("*.py")}
 
     # Source repository must not have changed.
-    assert before == after, "Source repository was mutated — M16 isolation failure"
+    assert before == after, "Source repository was mutated — isolation failure"
 
     # Generation must have succeeded.
     assert generation_result.status is GenerationStatus.GENERATED

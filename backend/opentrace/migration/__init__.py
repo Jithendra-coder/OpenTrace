@@ -1,4 +1,4 @@
-"""M10 deterministic migration planning and conservative source edits."""
+"""Deterministic migration planning and conservative source edits."""
 
 from opentrace.migration.engine import (
     DeterministicMigrationEngine,

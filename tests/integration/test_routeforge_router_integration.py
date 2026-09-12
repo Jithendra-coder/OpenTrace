@@ -1,4 +1,4 @@
-"""M13 real router artifact and validation-run checks."""
+"""RouteForge real router artifact and validation-run checks."""
 
 import json
 from pathlib import Path
@@ -12,11 +12,11 @@ from opentrace.routeforge.serialization import read_artifacts
 
 
 def test_checked_in_m13_run_is_real_and_test_sealed() -> None:
-    root = Path("data/routeforge-m13")
+    root = Path("data/routeforge_router")
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     router_config = json.loads((root / "router-config.json").read_text(encoding="utf-8"))
-    m11 = read_artifacts(Path("data/routeforge-m11"))
-    m12 = json.loads(Path("data/routeforge-m12/manifest.json").read_text(encoding="utf-8"))
+    m11 = read_artifacts(Path("data/routeforge_scenarios"))
+    m12 = json.loads(Path("data/routeforge_baselines/manifest.json").read_text(encoding="utf-8"))
 
     assert manifest["schema_version"] == ROUTEFORGE_ROUTER_ARTIFACT_SCHEMA
     assert manifest["experiment_id"] == ROUTEFORGE_EXPERIMENT_ID

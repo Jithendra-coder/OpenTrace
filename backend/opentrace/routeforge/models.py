@@ -1,4 +1,4 @@
-"""Provider-independent, offline RouteForge dataset contracts for M11."""
+"""Provider-independent, offline RouteForge dataset contracts."""
 
 from __future__ import annotations
 
@@ -156,7 +156,7 @@ class RouteForgeFeatures(CanonicalModel):
 
 
 class M10ObservedEvidence(CanonicalModel):
-    """Observed M10 facts, distinct from synthetic strategy outcomes."""
+    """Observed deterministic facts, distinct from synthetic strategy outcomes."""
 
     outcome: str
     repairability: str
@@ -206,11 +206,11 @@ class StrategyOutcome(CanonicalModel):
     def validate_provenance(self) -> StrategyOutcome:
         if self.provenance is OutcomeProvenance.OBSERVED_DETERMINISTIC:
             if self.strategy is not RouteForgeStrategy.DETERMINISTIC:
-                raise ValueError("observed M10 evidence is only valid for DETERMINISTIC")
+                raise ValueError("observed deterministic evidence is only valid for DETERMINISTIC")
             if self.synthetic_cost_units is not None or self.synthetic_latency_units is not None:
                 raise ValueError("observed deterministic evidence cannot carry synthetic units")
         elif self.producer == "m10:deterministic-migration-v1":
-            raise ValueError("synthetic/oracle outcomes cannot use the M10 observed producer")
+            raise ValueError("synthetic/oracle outcomes cannot use the deterministic observed producer")
         if self.outcome is StrategyOutcomeStatus.UNKNOWN and self.no_repair_required:
             raise ValueError("no-repair rows must be explicit NOT_APPLICABLE or SUCCESS")
         return self

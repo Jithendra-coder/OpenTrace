@@ -5,11 +5,11 @@ from opentrace.datasets.models import ImpactDataset, ScenarioDefinition
 from opentrace.datasets.remediation import generate_v3_dataset, validate_remediation_partitions
 from opentrace.datasets.serialization import parse_rows, rows_jsonl, scenarios_jsonl
 from opentrace.evaluation.chronology import ChronologyLog, ChronologyState
-from opentrace.evaluation.v3_protocol import write_protocol
+from opentrace.evaluation.evaluation_protocol import write_protocol
 
 
 def _v3_dataset() -> ImpactDataset:
-    root = Path("data/m7-v3")
+    root = Path("data/generated_benchmark")
     from opentrace.datasets.models import DatasetManifest
 
     manifest = DatasetManifest.model_validate_json((root / "manifest.json").read_text())
@@ -24,7 +24,7 @@ def _v3_dataset() -> ImpactDataset:
 
 def _historical_templates() -> frozenset[str]:
     values: set[str] = set()
-    for directory in (Path("data/m7"), Path("data/m7-remediation")):
+    for directory in (Path("data/impact_benchmark"), Path("data/remediation_benchmark")):
         values.update(
             ScenarioDefinition.model_validate_json(line).template_family_id
             for line in (directory / "scenarios.jsonl").read_text().splitlines()
@@ -37,9 +37,9 @@ def test_v3_generation_matches_canonical_order_and_repeats() -> None:
     generated = generate_v3_dataset(forbidden_test_templates=_historical_templates())
     second = generate_v3_dataset(forbidden_test_templates=_historical_templates())
     assert scenarios_jsonl(generated.scenarios) == Path(
-        "data/m7-v3/scenarios.jsonl"
+        "data/generated_benchmark/scenarios.jsonl"
     ).read_text()
-    assert rows_jsonl(generated.rows) == Path("data/m7-v3/canonical.jsonl").read_text()
+    assert rows_jsonl(generated.rows) == Path("data/generated_benchmark/canonical.jsonl").read_text()
     assert scenarios_jsonl(generated.scenarios) == scenarios_jsonl(second.scenarios)
     assert rows_jsonl(generated.rows) == rows_jsonl(second.rows)
     assert generated.manifest.content_sha256 == second.manifest.content_sha256

@@ -1,4 +1,4 @@
-"""M8 supervised impact-ranking baselines."""
+"""Supervised impact-ranking baselines."""
 
 from opentrace.ml.features import (
     FeatureEncoder,

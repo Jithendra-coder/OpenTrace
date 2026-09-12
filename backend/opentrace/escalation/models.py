@@ -1,4 +1,4 @@
-"""M17 + M18 models: escalation decisions and feedback records."""
+"""Escalation decisions and feedback records models."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ class CanonicalModel(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# M17 — Escalation
+# Escalation
 # ---------------------------------------------------------------------------
 
 
@@ -102,7 +102,7 @@ class EscalationResult(CanonicalModel):
 
 
 # ---------------------------------------------------------------------------
-# M18 — Feedback records
+# Feedback records
 # ---------------------------------------------------------------------------
 
 

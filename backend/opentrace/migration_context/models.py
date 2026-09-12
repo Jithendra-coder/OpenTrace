@@ -1,4 +1,4 @@
-"""Typed, immutable M14 bounded migration-context artifacts."""
+"""Typed, immutable bounded migration-context artifacts."""
 
 from __future__ import annotations
 

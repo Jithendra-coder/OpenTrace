@@ -1,4 +1,4 @@
-"""M0 health and version endpoints."""
+"""Health and version endpoints."""
 
 from fastapi import APIRouter
 from pydantic import BaseModel

@@ -54,8 +54,8 @@ def test_sealed_test_partition_and_group_integrity() -> None:
 
 
 def test_invalid_dataset_version_is_rejected(tmp_path) -> None:
-    source = tmp_path / "m7"
-    shutil.copytree("data/m7", source)
+    source = tmp_path / "impact_benchmark"
+    shutil.copytree("data/impact_benchmark", source)
     manifest_path = source / "manifest.json"
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     manifest["dataset_version"] = "unknown"

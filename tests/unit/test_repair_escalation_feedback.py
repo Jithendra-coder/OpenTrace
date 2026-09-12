@@ -1,4 +1,4 @@
-"""M17 + M18 unit tests: escalation engine, feedback records, policy contracts."""
+"""Unit tests: escalation engine, feedback records, policy contracts."""
 
 from __future__ import annotations
 
@@ -69,7 +69,7 @@ def _decision(strategy: RouteChoice = RouteChoice.SMALL) -> RoutingDecision:
         model_artifact_checksum="fixture-checksum",
         context_fingerprint="fixture-fingerprint",
         explanation=RoutingExplanation(
-            summary="M17 fixture.",
+            summary="Escalation fixture.",
             applicability=("SMALL applicable",),
             selection_basis="Fixture evidence only.",
             evidence_features=("m10_outcome=DETERMINISTIC_CANDIDATE",),
@@ -103,7 +103,7 @@ def m14_context():
 
 
 # ---------------------------------------------------------------------------
-# M17 — Escalation engine tests
+# Escalation engine tests
 # ---------------------------------------------------------------------------
 
 
@@ -261,7 +261,7 @@ def test_evidence_is_incorporated_not_blind_regeneration(m14_context) -> None:
 
 
 # ---------------------------------------------------------------------------
-# M18 — Feedback record tests
+# Feedback record tests
 # ---------------------------------------------------------------------------
 
 

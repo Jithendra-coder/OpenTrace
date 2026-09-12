@@ -1,4 +1,4 @@
-"""Real M1→M6 evidence feeding the deterministic M10 engine."""
+"""Analysis evidence feeding the deterministic migration engine."""
 
 from __future__ import annotations
 
@@ -18,11 +18,11 @@ def analyze_vertical_slice(
     new_spec_path: Path | str,
     repository_path: Path | str,
 ) -> MigrationBatchResult:
-    """Analyze real M1–M6 evidence and produce M10 candidate results.
+    """Analyze real evidence and produce candidate results.
 
     The migration engine receives only changes, call sites, and direct impacts
     emitted by the canonical blast-radius pipeline.  It never executes source
-    code and it never consults the M7–M9 ML artifacts.
+    code and it never consults ML ranking artifacts.
     """
 
     repository_root = Path(repository_path)

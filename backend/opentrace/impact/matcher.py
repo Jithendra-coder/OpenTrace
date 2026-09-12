@@ -72,7 +72,7 @@ _RESPONSE_FIELD_CATEGORIES = frozenset(
 
 
 class DirectImpactMatcher:
-    """Match structured M2 changes with structured M3 call-site evidence."""
+    """Match structured contract changes with structured call-site evidence."""
 
     def __init__(
         self,
@@ -249,7 +249,7 @@ class DirectImpactMatcher:
             if not change.location.startswith(
                 "response.default"
             ) and not change.location.startswith("response.200"):
-                warnings.append("M3 does not attribute response usage to a response status code.")
+                warnings.append("Call analysis does not attribute response usage to a response status code.")
                 certainty = _combine_certainty(certainty, ResolutionState.PARTIAL)
         else:
             return None

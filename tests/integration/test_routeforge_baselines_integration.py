@@ -1,4 +1,4 @@
-"""M12 real artifact and upstream-integrity integration checks."""
+"""RouteForge real artifact and upstream-integrity integration checks."""
 
 import json
 from pathlib import Path
@@ -7,9 +7,9 @@ from opentrace.routeforge.serialization import read_artifacts
 
 
 def test_checked_in_m12_run_is_real_grouped_validation_artifact() -> None:
-    root = Path("data/routeforge-m12")
+    root = Path("data/routeforge_baselines")
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
-    dataset = read_artifacts(Path("data/routeforge-m11"))
+    dataset = read_artifacts(Path("data/routeforge_scenarios"))
 
     assert manifest["schema_version"] == "routeforge-baselines-v1"
     assert manifest["dataset_checksum"] == dataset.manifest.content_sha256

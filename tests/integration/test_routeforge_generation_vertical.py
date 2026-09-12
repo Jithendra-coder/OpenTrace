@@ -1,4 +1,4 @@
-"""M11 real canonical M1→M10 feature extraction and artifact generation."""
+"""RouteForge real canonical feature extraction and artifact generation."""
 
 from pathlib import Path
 
@@ -30,7 +30,7 @@ def test_canonical_routeforge_artifact_consumes_real_m10_evidence() -> None:
 
 
 def test_checked_in_m11_artifact_roundtrips() -> None:
-    artifact = read_artifacts(ROOT / "data" / "routeforge-m11")
+    artifact = read_artifacts(ROOT / "data" / "routeforge_scenarios")
     assert artifact.manifest.dataset_version == "routeforge-dataset-v1"
     assert len(artifact.scenarios) == 9
     assert len(artifact.rows) == 45

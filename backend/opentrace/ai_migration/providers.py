@@ -1,4 +1,4 @@
-"""Deterministic provider adapter used only for M15 tests and local demonstrations."""
+"""Deterministic provider adapter used for tests and local demonstrations."""
 
 from __future__ import annotations
 

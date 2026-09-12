@@ -1,4 +1,4 @@
-"""M22 Dashboard API — all /api/* routes for the frontend."""
+"""Dashboard API — all /api/* routes for the frontend."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""The first real M1 → M2 → M3 → M4 in-memory analysis path."""
+"""The direct impact in-memory analysis path."""
 
 from pathlib import Path
 from urllib.parse import urlsplit

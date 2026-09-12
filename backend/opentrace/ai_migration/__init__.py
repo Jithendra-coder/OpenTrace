@@ -1,4 +1,4 @@
-"""M15 provider-independent generation of unvalidated migration candidates."""
+"""Provider-independent generation of unvalidated migration candidates."""
 
 from opentrace.ai_migration.generator import (
     GenerationProvider,

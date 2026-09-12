@@ -1,4 +1,4 @@
-"""Deterministic JSONL serialization and integrity checks for M11."""
+"""Deterministic JSONL serialization and integrity checks."""
 
 from __future__ import annotations
 

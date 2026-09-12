@@ -1,4 +1,4 @@
-"""Deterministic, source-safe M14 selection of bounded migration evidence."""
+"""Deterministic, source-safe selection of bounded migration evidence."""
 
 from __future__ import annotations
 
@@ -136,7 +136,7 @@ def _missing_omission(
 
 
 class _SourceReader:
-    """Read only explicit M3/M4/M5 evidence paths, never repository-wide content."""
+    """Read only explicit code and impact evidence paths, never repository-wide content."""
 
     def __init__(self, root: Path | str) -> None:
         self.root = Path(root).resolve()
@@ -258,7 +258,7 @@ class MigrationContextSelector:
         budget_characters: int | None = None,
     ) -> ContextSelection:
         if not isinstance(routing_decision, RoutingDecision):
-            raise TypeError("routing_decision must be the M13 typed RoutingDecision artifact")
+            raise TypeError("routing_decision must be the typed RoutingDecision artifact")
         limit = budget_characters or self.policy.default_budget_characters
         if limit < self.policy.minimum_budget_characters:
             raise ValueError("context budget is below the policy minimum")
@@ -451,7 +451,7 @@ class MigrationContextSelector:
                     symbol=None,
                     provenance_ids=(),
                     reason=ContextOmissionReason.MISSING_EVIDENCE,
-                    detail="M14 requires M10 migration evidence for a repair route.",
+                    detail="Requires migration evidence for a repair route.",
                     priority=5,
                 )
             )
@@ -472,7 +472,7 @@ class MigrationContextSelector:
                         provenance_ids=(plan.id,),
                         reason=ContextOmissionReason.MISSING_EVIDENCE,
                         detail=(
-                            "M10 plan does not resolve to canonical M1–M4 API-change, impact, "
+                            "Migration plan does not resolve to canonical API-change, impact, "
                             "and call evidence."
                         ),
                         priority=2,
@@ -489,7 +489,7 @@ class MigrationContextSelector:
                 symbol=call.owning_symbol,
                 start_line=call.line,
                 end_line=call.end_line,
-                reason="Exact M3 HTTP call matched by M4 direct impact.",
+                reason="Exact HTTP call matched by direct impact.",
                 provenance_ids=(change.id, impact.id, call.id, plan.id),
                 priority=2,
                 required=True,
@@ -508,7 +508,7 @@ class MigrationContextSelector:
                         symbol=call.owning_symbol,
                         provenance_ids=(impact.id, call.id, plan.id),
                         reason=ContextOmissionReason.MISSING_EVIDENCE,
-                        detail="M5 graph has no static owning symbol for the direct API call.",
+                        detail="Graph has no static owning symbol for the direct API call.",
                         priority=3,
                     )
                 )
@@ -521,7 +521,7 @@ class MigrationContextSelector:
                     symbol=target.qualified_name,
                     start_line=target.line,
                     end_line=target.end_line,
-                    reason="Containing M3 symbol for the exact direct API call.",
+                    reason="Containing symbol for the exact direct API call.",
                     provenance_ids=(change.id, impact.id, call.id, target.id, plan.id),
                     priority=3,
                     required=True,
@@ -569,7 +569,7 @@ class MigrationContextSelector:
                         symbol=impacted.symbol,
                         provenance_ids=(impacted.id, *impacted.source_direct_impact_ids),
                         reason=ContextOmissionReason.MISSING_EVIDENCE,
-                        detail="Blast-radius caller has no static M5 symbol source span.",
+                        detail="Blast-radius caller has no static symbol source span.",
                         priority=6,
                     )
                 )
@@ -582,7 +582,7 @@ class MigrationContextSelector:
                 start_line=node.line,
                 end_line=node.end_line,
                 reason=(
-                    f"Nearest static M5/M6 caller at graph distance {impacted.distance}; "
+                    f"Nearest static caller at graph distance {impacted.distance}; "
                     "optional after direct evidence."
                 ),
                 provenance_ids=(impacted.id, *impacted.source_direct_impact_ids),
@@ -705,7 +705,7 @@ class MigrationContextSelector:
             start_line=None,
             end_line=None,
             content=content,
-            reason="M3 payload and response-use evidence for the direct API call.",
+            reason="Payload and response-use evidence for the direct API call.",
             provenance_ids=(change.id, impact.id, call.id, plan_id),
             priority=4,
             required=True,
@@ -736,7 +736,7 @@ class MigrationContextSelector:
             start_line=None,
             end_line=None,
             content=content,
-            reason="M10 deterministic repairability, rule, conflict, and warning evidence.",
+            reason="Deterministic repairability, rule, conflict, and warning evidence.",
             provenance_ids=(result.id, plan.id, plan.change_id, plan.direct_impact_id),
             priority=5,
             required=True,
@@ -767,7 +767,7 @@ class MigrationContextSelector:
             start_line=None,
             end_line=None,
             content=content,
-            reason="M13 selected abstract RouteForge strategy and non-oracle decision evidence.",
+            reason="Selected abstract RouteForge strategy and non-oracle decision evidence.",
             provenance_ids=(decision.decision_id,),
             priority=5,
             required=True,

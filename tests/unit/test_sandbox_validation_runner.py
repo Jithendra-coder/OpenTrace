@@ -1,4 +1,4 @@
-"""M16 unit tests: sandbox, runner, validator contracts and adversarial cases."""
+"""Sandbox, runner, validator contracts and adversarial cases."""
 
 from __future__ import annotations
 
@@ -80,7 +80,7 @@ def _make_patch(
         generation_fingerprint="fixture-fingerprint",
         provider_response_hash="fixture-response-hash",
         edits=edits,
-        explanation="Fixture patch for M16 unit tests.",
+        explanation="Fixture patch for unit tests.",
     )
 
 

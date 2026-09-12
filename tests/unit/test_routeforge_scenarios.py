@@ -1,4 +1,4 @@
-"""M11 RouteForge schema, objective, leakage, and reproducibility tests."""
+"""RouteForge schema, objective, leakage, and reproducibility tests."""
 
 from pathlib import Path
 

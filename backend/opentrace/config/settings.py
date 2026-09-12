@@ -1,4 +1,4 @@
-"""M0 environment-backed settings."""
+"""Environment-backed application settings."""
 
 from functools import lru_cache
 from typing import Literal
@@ -10,7 +10,7 @@ _VALID_LOG_LEVELS = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"}
 
 
 class Settings(BaseSettings):
-    """Settings limited to the M0 application shell."""
+    """Settings for the application."""
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

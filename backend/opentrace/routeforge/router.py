@@ -1,4 +1,4 @@
-"""M13 learned RouteForge router over the frozen M12 Logistic scorer."""
+"""RouteForge learned router over the frozen Logistic scorer."""
 
 from __future__ import annotations
 
@@ -187,7 +187,7 @@ def _validate_artifact_identity(artifact: RouterModelArtifact) -> None:
     if artifact.training_partition != "TRAIN":
         raise ValueError("RouteForge scorer must be trained on TRAIN")
     if artifact.m12_experiment_id != M12_LOGISTIC_EXPERIMENT_ID:
-        raise ValueError("RouteForge scorer is not the frozen M12 Logistic experiment")
+        raise ValueError("RouteForge scorer is not the frozen Logistic experiment")
     if tuple(artifact.allowlist) != tuple(MODEL_FEATURE_ALLOWLIST):
         raise ValueError("RouteForge model allowlist mismatch")
     if tuple(artifact.numeric_feature_names) != NUMERIC_FEATURES + BOOLEAN_FEATURES:
@@ -230,7 +230,7 @@ def _context_values(
 ) -> dict[str, object]:
     values = context.features.model_dump(mode="json")
     if set(values) != set(MODEL_FEATURE_ALLOWLIST):
-        raise ValueError("routing context does not match the M11 feature allowlist")
+        raise ValueError("routing context does not match the feature allowlist")
     values["strategy_identity"] = strategy.value
     return values
 
@@ -272,7 +272,7 @@ def _applicability(context: RoutingDecisionContext) -> dict[RouteForgeStrategy, 
     features = context.features
     if not features.deterministic_rule_available or features.m10_repairability == "UNSUPPORTED":
         result[RouteForgeStrategy.DETERMINISTIC] = (
-            "excluded: M10 cannot safely provide deterministic repair; AI_REQUIRED is evidence only"
+            "excluded: deterministic repair unavailable; AI_REQUIRED is evidence only"
         )
     else:
         result[RouteForgeStrategy.DETERMINISTIC] = "applicable: deterministic candidate evidence"
@@ -283,7 +283,7 @@ def _applicability(context: RoutingDecisionContext) -> dict[RouteForgeStrategy, 
     ):
         result[strategy] = (
             f"applicable: abstract {strategy.value} strategy; independent of "
-            "M10 AI_REQUIRED evidence"
+            "AI_REQUIRED evidence"
         )
     return result
 
@@ -494,7 +494,7 @@ class RouteForgeRouter:
                 selected = selected_candidate
                 selection_basis = (
                     "Selected the highest finite uncalibrated offline oracle-success score "
-                    "under the score-only M13 prototype policy; routeforge-objective-v1 is "
+                    "under the score-only prototype policy; routeforge-objective-v1 is "
                     "evaluated post-selection. Ties use its canonical tie_break_order."
                 )
                 summary = f"Selected {selected.value} from applicable pre-decision strategies."
@@ -588,7 +588,7 @@ def _fit_primary_artifact(
 ) -> RouterModelArtifact:
     eligible_rows = tuple(row for row in train_rows if _eligible(row))
     if not eligible_rows:
-        raise ValueError("M13 requires eligible TRAIN outcomes")
+        raise ValueError("Router requires eligible TRAIN outcomes")
     from opentrace.routeforge.baselines import RouteForgeFeatureEncoder
 
     encoder = RouteForgeFeatureEncoder().fit(eligible_rows)
@@ -760,9 +760,9 @@ def _clear_output(output: Path) -> None:
 def _m12_integrity(m12_directory: Path, dataset: RouteForgeDataset) -> dict[str, object]:
     manifest = json.loads((m12_directory / "manifest.json").read_text(encoding="utf-8"))
     if manifest["dataset_checksum"] != dataset.manifest.content_sha256:
-        raise ValueError("M12 dataset checksum differs from M11")
+        raise ValueError("Baseline dataset checksum differs from scenarios checksum")
     if manifest["test_used_for_model_selection"] or manifest["test_evaluated"]:
-        raise ValueError("M12 TEST seal is not intact")
+        raise ValueError("Baseline TEST seal is not intact")
     experiment_ids = tuple(str(value) for value in manifest["experiment_ids"])
     required = {
         "RF-B0-ALWAYS-SMALL",
@@ -773,7 +773,7 @@ def _m12_integrity(m12_directory: Path, dataset: RouteForgeDataset) -> dict[str,
         "RF-B5-XGBOOST",
     }
     if set(experiment_ids) != required:
-        raise ValueError("M12 required experiment set is incomplete")
+        raise ValueError("Baseline required experiment set is incomplete")
     return {
         "dataset_checksum": manifest["dataset_checksum"],
         "experiment_ids": list(experiment_ids),
@@ -787,15 +787,15 @@ def _m12_integrity(m12_directory: Path, dataset: RouteForgeDataset) -> dict[str,
 
 
 def run_m13_router(
-    dataset_directory: Path | str = Path("data/routeforge-m11"),
-    m12_directory: Path | str = Path("data/routeforge-m12"),
-    output_directory: Path | str = Path("data/routeforge-m13"),
+    dataset_directory: Path | str = Path("data/routeforge_scenarios"),
+    m12_directory: Path | str = Path("data/routeforge_baselines"),
+    output_directory: Path | str = Path("data/routeforge_router"),
     *,
     seed: int = BASELINE_SEED,
 ) -> M13RunResult:
     dataset = read_artifacts(Path(dataset_directory))
     if dataset.manifest.content_sha256 != M11_HISTORICAL_CHECKSUM:
-        raise ValueError("M11 canonical checksum differs from the frozen historical checksum")
+        raise ValueError("RouteForge canonical checksum differs from the frozen historical checksum")
     m12_path = Path(m12_directory)
     m12_integrity = _m12_integrity(m12_path, dataset)
     train_rows = _partition_rows(dataset, "TRAIN")
@@ -997,7 +997,7 @@ def run_m13_router(
             "dataset_version": dataset.manifest.dataset_version,
             "dataset_checksum": dataset.manifest.content_sha256,
             "split_strategy": (
-                "M11 decision-group split; TRAIN fit, VALIDATION routing diagnostics, "
+                "decision-group split; TRAIN fit, VALIDATION routing diagnostics, "
                 "TEST sealed"
             ),
             "features": list(MODEL_FEATURE_ALLOWLIST) + ["strategy_identity"],
@@ -1026,7 +1026,7 @@ def run_m13_router(
                 "comparison_metrics.json",
             ],
             "reproduction_command": (
-                "python -m opentrace.routeforge.router --output data/routeforge-m13"
+                "python -m opentrace.routeforge.router --output data/routeforge_router"
             ),
         },
     )
@@ -1044,10 +1044,10 @@ def run_m13_router(
 def main() -> None:
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run the offline M13 RouteForge router")
-    parser.add_argument("--dataset", default="data/routeforge-m11")
-    parser.add_argument("--m12", default="data/routeforge-m12")
-    parser.add_argument("--output", default="data/routeforge-m13")
+    parser = argparse.ArgumentParser(description="Run the offline RouteForge router")
+    parser.add_argument("--dataset", default="data/routeforge_scenarios")
+    parser.add_argument("--baselines", "--m12", dest="m12", default="data/routeforge_baselines")
+    parser.add_argument("--output", default="data/routeforge_router")
     parser.add_argument("--seed", type=int, default=BASELINE_SEED)
     args = parser.parse_args()
     result = run_m13_router(args.dataset, args.m12, args.output, seed=args.seed)

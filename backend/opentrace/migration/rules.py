@@ -1,4 +1,4 @@
-"""Trusted, centralized deterministic migration policy for M10."""
+"""Trusted, centralized deterministic migration policy."""
 
 from __future__ import annotations
 
@@ -86,7 +86,7 @@ SUPPORT_MATRIX: dict[ChangeCategory, tuple[Repairability, str]] = {
 
 
 def support_matrix() -> dict[str, dict[str, str]]:
-    """Return a serializable copy of the complete current M2 support matrix."""
+    """Return a serializable copy of the complete current change support matrix."""
 
     return {
         category.value: {"status": status.value, "reason": reason}

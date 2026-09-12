@@ -1,4 +1,4 @@
-"""Conservative, source-range deterministic migration planning for M10."""
+"""Conservative, source-range deterministic migration planning."""
 
 from __future__ import annotations
 
@@ -83,7 +83,7 @@ def _literal_key(node: ast.expr | None) -> str | None:
 def _field_path(change: APIChange) -> tuple[str, ...]:
     evidence = change.evidence.get("property")
     if isinstance(evidence, str) and evidence:
-        # M2 locations encode nested properties after the media-type bracket.
+        # Contract change locations encode nested properties after the media-type bracket.
         marker = "]."
         if marker in change.location:
             suffix = change.location.split(marker, 1)[1]
@@ -494,7 +494,7 @@ class DeterministicMigrationEngine:
                     ),
                     rule_id=rule.id,
                     rule_version=rule.version,
-                    warnings=("M4 evidence is not exact for deterministic repair.",),
+                    warnings=("Direct-impact evidence is not exact for deterministic repair.",),
                 )
             )
         target_path = _field_path(change)
@@ -568,7 +568,7 @@ class DeterministicMigrationEngine:
                     file=file,
                     outcome=MigrationOutcome.AI_REQUIRED,
                     repairability=Repairability.PARTIALLY_SUPPORTED,
-                    explanation="The exact M3 call-site source span was not found.",
+                    explanation="The exact call-site source span was not found.",
                     rule_id=rule.id,
                     rule_version=rule.version,
                     warnings=("Source evidence is stale or call-site coordinates changed.",),

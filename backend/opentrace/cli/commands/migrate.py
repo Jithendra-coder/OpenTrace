@@ -33,7 +33,7 @@ _POLICY_STRATEGY_MAP = {
 
 
 def run_migrate(workspace: Path, policy: str, ai_enabled: bool) -> None:
-    """Run M10→M15 pipeline to produce a migration plan."""
+    """Run migration pipeline to produce a migration plan."""
 
     if not analysis_exists(workspace):
         print_error("No analysis found. Run  opentrace analyze  first.")
@@ -64,7 +64,7 @@ def run_migrate(workspace: Path, policy: str, ai_enabled: bool) -> None:
     routing_decision = _build_cli_routing_decision(strategy, policy)
 
     # --- Generate migration plan ---
-    print(f"  Running migration pipeline (M10→M15)...")
+    print(f"  Running migration pipeline...")
     try:
         # Always use the DeterministicFakeProvider for local demo mode.
         # A real AI provider can be plugged in by implementing GenerationProvider.
@@ -165,7 +165,7 @@ def _build_cli_routing_decision(strategy: RouteChoice, policy: str) -> RoutingDe
         feature_schema_version="routeforge-features-v1",
         strategy_taxonomy_version="routeforge-strategies-v1",
         objective_version="routeforge-objective-v1",
-        model_id="RF-M13-LOGISTIC-V1",
+        model_id="routeforge-logistic-v1",
         scorer_version="routeforge-logistic-scorer-v1",
         router_version=ROUTEFORGE_ROUTER_VERSION,
         decision_policy_version=ROUTEFORGE_DECISION_POLICY_VERSION,

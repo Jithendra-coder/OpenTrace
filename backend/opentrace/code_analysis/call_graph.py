@@ -55,7 +55,7 @@ class _Module:
 
 
 class StaticCallGraphBuilder:
-    """Build local CALLS edges from M3 symbols and static AST evidence."""
+    """Build local CALLS edges from code symbols and static AST evidence."""
 
     def __init__(self, root: Path | str, analysis: RepositoryAnalysis | None = None) -> None:
         self.root = Path(root).resolve()

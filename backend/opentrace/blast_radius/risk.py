@@ -1,4 +1,4 @@
-"""Centralized deterministic M6 heuristic risk policy."""
+"""Centralized deterministic heuristic risk policy."""
 
 import hashlib
 from dataclasses import dataclass, field
@@ -80,7 +80,7 @@ class HeuristicRiskAssessor:
                 feature="direct_evidence",
                 observed_value=impact_score,
                 contribution=direct_evidence,
-                explanation="The strongest M4 direct-impact score contributes bounded evidence.",
+                explanation="The strongest direct-impact score contributes bounded evidence.",
             )
         )
         direct_symbols = min(blast_radius.direct_symbol_count, 3) * self.policy.direct_symbol_weight

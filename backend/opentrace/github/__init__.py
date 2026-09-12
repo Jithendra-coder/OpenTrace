@@ -1,4 +1,4 @@
-"""M21 GitHub integration module."""
+"""GitHub integration module."""
 
 from opentrace.github.client import GitHubClient, GitHubClientError
 from opentrace.github.git import (

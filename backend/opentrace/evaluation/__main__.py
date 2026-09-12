@@ -1,4 +1,4 @@
-"""Run the canonical M9 formal evaluator."""
+"""Run the canonical formal evaluator."""
 
 from opentrace.evaluation.pipeline import run_m9_evaluation
 

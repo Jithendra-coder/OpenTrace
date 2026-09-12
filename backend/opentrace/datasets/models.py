@@ -1,4 +1,4 @@
-"""Typed, versioned M7 dataset artifacts and provenance models."""
+"""Typed, versioned dataset artifacts and provenance models."""
 
 from __future__ import annotations
 
@@ -109,7 +109,7 @@ class FeatureEvidence(CanonicalModel):
 
 
 class DatasetFeatures(CanonicalModel):
-    """Observed M1-M6 features; no ground-truth fields are included."""
+    """Observed analysis features; no ground-truth fields are included."""
 
     change_category: str
     change_severity: str

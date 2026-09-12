@@ -14,14 +14,14 @@ ROOT = Path(__file__).parents[2]
 
 
 def test_gate_c_v2_manifest_is_group_safe_and_independent() -> None:
-    dataset = read_artifacts(ROOT / "data" / "routeforge-v2")
+    dataset = read_artifacts(ROOT / "data" / "evaluation_scenarios")
     audit = _partition_fingerprints(dataset)
     assert dataset.manifest.dataset_version == "routeforge-dataset-v2"
     assert dataset.manifest.decision_group_count == 64
     assert dataset.manifest.strategy_outcome_row_count == 320
     assert audit["all_zero"] is True
     protocol = json.loads(
-        (ROOT / "data" / "routeforge-gate-c" / "protocol.json").read_text(
+        (ROOT / "data" / "routeforge_evaluation" / "protocol.json").read_text(
             encoding="utf-8"
         )
     )
@@ -31,7 +31,7 @@ def test_gate_c_v2_manifest_is_group_safe_and_independent() -> None:
 
 def test_gate_c_pretest_manifest_remains_closed() -> None:
     manifest = json.loads(
-        (ROOT / "data" / "routeforge-gate-c" / "pre-test-manifest.json").read_text(
+        (ROOT / "data" / "routeforge_evaluation" / "pre-test-manifest.json").read_text(
             encoding="utf-8"
         )
     )
@@ -42,12 +42,12 @@ def test_gate_c_pretest_manifest_remains_closed() -> None:
 def test_gate_c_formal_test_seal_rejects_rerun() -> None:
     with pytest.raises(ValueError, match="already completed"):
         run_formal_gate_c_test(
-            ROOT / "data" / "routeforge-v2", ROOT / "data" / "routeforge-gate-c"
+            ROOT / "data" / "evaluation_scenarios", ROOT / "data" / "routeforge_evaluation"
         )
 
 
 def test_gate_c_score_policy_uses_explicit_applicability() -> None:
-    dataset = read_artifacts(ROOT / "data" / "routeforge-v2")
+    dataset = read_artifacts(ROOT / "data" / "evaluation_scenarios")
     scenario = next(
         item
         for item in dataset.scenarios

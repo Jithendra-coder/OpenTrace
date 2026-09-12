@@ -1,4 +1,4 @@
-"""Static Python repository analysis for M3."""
+"""Static Python repository analysis."""
 
 from opentrace.code_analysis.call_graph import analyze_call_graph, build_call_graph
 from opentrace.code_analysis.call_models import (

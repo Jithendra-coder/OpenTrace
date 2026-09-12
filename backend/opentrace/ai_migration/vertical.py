@@ -1,4 +1,4 @@
-"""Real M1→M14 evidence composed with M15's guarded generation boundary."""
+"""Migration context evidence composed with guarded generation boundary."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ def analyze_migration_generation_vertical_slice(
     context_budget_characters: int | None = None,
     policy: GenerationPolicy | None = None,
 ) -> MigrationGenerationResult:
-    """Run the permitted M1→M15 path without rescanning beyond M14 selection."""
+    """Run the guarded candidate generation path without rescanning beyond context selection."""
 
     selection = analyze_migration_context_vertical_slice(
         old_spec_path,

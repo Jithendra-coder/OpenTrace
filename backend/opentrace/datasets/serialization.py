@@ -1,4 +1,4 @@
-"""Inspectably serialize and validate M7 JSONL artifacts."""
+"""Inspectably serialize and validate dataset JSONL artifacts."""
 
 from __future__ import annotations
 

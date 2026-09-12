@@ -9,7 +9,7 @@ from opentrace.routeforge.serialization import read_artifacts
 
 
 def _context(name: str):
-    dataset = read_artifacts(Path("data/routeforge-m11"))
+    dataset = read_artifacts(Path("data/routeforge_scenarios"))
     return next(item.context for item in dataset.scenarios if item.scenario_id == name)
 
 
@@ -23,7 +23,7 @@ def test_v3_classified_selection_represents_learned_abstention_and_all_routes() 
         RouteForgeStrategy.STRONG: -1.0,
     }
     choice, reason = select_classified_strategy(
-        ai_required, score_floor, read_artifacts(Path("data/routeforge-m11")).manifest.objective
+        ai_required, score_floor, read_artifacts(Path("data/routeforge_scenarios")).manifest.objective
     )
     assert choice is RouteChoice.NO_FEASIBLE_STRATEGY
     assert reason == "LEARNED_ABSTENTION"
@@ -39,7 +39,7 @@ def test_v3_classified_selection_represents_learned_abstention_and_all_routes() 
         choice, reason = select_classified_strategy(
             deterministic_context,
             scores,
-            read_artifacts(Path("data/routeforge-m11")).manifest.objective,
+            read_artifacts(Path("data/routeforge_scenarios")).manifest.objective,
         )
         assert choice is expected
         assert reason is None
@@ -48,7 +48,7 @@ def test_v3_classified_selection_represents_learned_abstention_and_all_routes() 
     choice, reason = select_classified_strategy(
         no_repair,
         score_floor,
-        read_artifacts(Path("data/routeforge-m11")).manifest.objective,
+        read_artifacts(Path("data/routeforge_scenarios")).manifest.objective,
     )
     assert choice is RouteChoice.NO_AI
     assert reason is None

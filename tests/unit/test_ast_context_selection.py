@@ -1,4 +1,4 @@
-"""M14 bounded MigrationContext policy and adversarial tests."""
+"""Bounded MigrationContext policy and adversarial tests."""
 
 from __future__ import annotations
 
@@ -35,7 +35,7 @@ DEMO = ROOT / "demo" / "ecommerce"
 
 
 def _decision(strategy: RouteChoice = RouteChoice.SMALL) -> RoutingDecision:
-    """Governed M13 fixture containing only pre-decision, non-oracle route evidence."""
+    """Governed routing fixture containing only pre-decision, non-oracle route evidence."""
 
     abstention = (
         RoutingAbstention(code="LEARNED_ABSTENTION", reason="fixture abstention")
@@ -67,12 +67,12 @@ def _decision(strategy: RouteChoice = RouteChoice.SMALL) -> RoutingDecision:
         model_artifact_checksum="fixture-model-checksum",
         context_fingerprint="fixture-context-fingerprint",
         explanation=RoutingExplanation(
-            summary="Governed M13 fixture.",
+            summary="Governed routing fixture.",
             applicability=("SMALL applicable",),
             selection_basis="Pre-decision fixture evidence only.",
             evidence_features=("m10_outcome=DETERMINISTIC_CANDIDATE",),
         ),
-        warnings=("M13 fixture is governed test evidence only.",),
+        warnings=("Routing fixture is governed test evidence only.",),
         abstention=abstention,
     )
 

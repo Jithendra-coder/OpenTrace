@@ -1,4 +1,4 @@
-"""M18 feedback writer: persists versioned, immutable feedback records to disk."""
+"""Feedback writer: persists versioned, immutable feedback records to disk."""
 
 from __future__ import annotations
 

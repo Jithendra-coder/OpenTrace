@@ -1,4 +1,4 @@
-"""Real M1→M10 evidence path consumed by the M14 context selector."""
+"""Evidence path consumed by the context selector."""
 
 from __future__ import annotations
 
@@ -19,9 +19,9 @@ def analyze_migration_context_vertical_slice(
     *,
     budget_characters: int | None = None,
 ) -> ContextSelection:
-    """Select M14 context from real M1–M10 artifacts and an already-made M13 decision.
+    """Select context from real artifacts and an already-made routing decision.
 
-    The caller supplies M13's typed decision.  This path intentionally does
+    The caller supplies the typed decision.  This path intentionally does
     not route, read RouteForge datasets, or inspect any oracle outcome table.
     """
 

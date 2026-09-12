@@ -1,4 +1,4 @@
-"""Canonical M6 blast-radius and heuristic-risk models."""
+"""Canonical blast-radius and heuristic-risk models."""
 
 from enum import StrEnum
 

@@ -1,4 +1,4 @@
-"""Guarded M15 orchestration for provider-neutral candidate generation."""
+"""Guarded orchestration for provider-neutral candidate generation."""
 
 from __future__ import annotations
 
@@ -128,7 +128,7 @@ class MigrationGenerator:
                 None,
                 None,
                 "MISSING_MIGRATION_CONTEXT",
-                "An AI route requires a complete bounded M14 MigrationContext.",
+                "An AI route requires a complete bounded MigrationContext.",
             )
         if context.selected_strategy is not strategy:
             return self._failure(
@@ -136,7 +136,7 @@ class MigrationGenerator:
                 context,
                 None,
                 "ROUTE_CONTEXT_MISMATCH",
-                "M14 context strategy does not match the supplied M13 routing decision.",
+                "MigrationContext strategy does not match the supplied routing decision.",
             )
         if not configuration.ai_enabled:
             return self._failure(
@@ -354,7 +354,7 @@ class MigrationGenerator:
     ) -> tuple[ProposedFileEdit, int, int] | GenerationFailure:
         unsafe = _unsafe_path(edit.file)
         if unsafe is not None:
-            return self._unsafe(unsafe, "Provider proposed a path outside the M15 safety policy.")
+            return self._unsafe(unsafe, "Provider proposed a path outside the generation safety policy.")
         item = items.get(edit.context_item_id)
         if item is None or item.file is None:
             return self._unsafe(
@@ -362,7 +362,7 @@ class MigrationGenerator:
             )
         if edit.file not in allowed_files or edit.file != item.file:
             return self._unsafe(
-                "UNAUTHORIZED_FILE", "Provider edit targets a file not authorized by M14 context."
+                "UNAUTHORIZED_FILE", "Provider edit targets a file not authorized by migration context."
             )
         if len(edit.original_text) > self.policy.maximum_original_characters:
             return self._unsafe(
@@ -465,7 +465,7 @@ class MigrationGenerator:
         context: MigrationContext | None, decision: RoutingDecision
     ) -> MigrationGenerationResult:
         reason = {
-            RouteChoice.DETERMINISTIC: "DETERMINISTIC route remains on the existing M10 path.",
+            RouteChoice.DETERMINISTIC: "DETERMINISTIC route remains on the existing deterministic path.",
             RouteChoice.NO_AI: "NO_AI route requires no generated migration.",
             RouteChoice.NO_FEASIBLE_STRATEGY: (
                 "NO_FEASIBLE_STRATEGY route cannot generate a candidate."

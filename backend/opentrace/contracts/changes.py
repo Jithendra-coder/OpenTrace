@@ -33,7 +33,7 @@ _RESPONSE = "response"
 
 
 def compare_specifications(old: APISpecification, new: APISpecification) -> tuple[APIChange, ...]:
-    """Compare two M1-normalized specifications without parsing, I/O, or network access."""
+    """Compare two normalized specifications without parsing, I/O, or network access."""
     changes: dict[str, APIChange] = {}
     old_operations = {(operation.path, operation.method): operation for operation in old.operations}
     new_operations = {(operation.path, operation.method): operation for operation in new.operations}
@@ -570,7 +570,7 @@ def _resolve_schema(
         target = specification.schemas.get(reference.target.removeprefix(prefix))
         if target is None:
             return None
-        notes.append(f"Resolved internal reference {reference.target} through M1 metadata.")
+        notes.append(f"Resolved internal reference {reference.target} through contract metadata.")
         current = target
     return current, tuple(notes)
 
@@ -584,7 +584,7 @@ def _schema_certainty(
         return ChangeCertainty.UNRESOLVED, (
             *old_notes,
             *new_notes,
-            "M1 marked a compared schema as unsupported; no exact compatibility "
+            "Schema parser marked a compared schema as unsupported; no exact compatibility "
             "conclusion is claimed.",
         )
     if SupportStatus.PARTIALLY_SUPPORTED in statuses or composition:
@@ -592,7 +592,7 @@ def _schema_certainty(
             *old_notes,
             *new_notes,
             *(
-                ("M1 preserved partially supported schema structure.",)
+                ("Preserved partially supported schema structure.",)
                 if SupportStatus.PARTIALLY_SUPPORTED in statuses
                 else ()
             ),

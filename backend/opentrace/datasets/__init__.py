@@ -1,4 +1,4 @@
-"""M7 synthetic and curated dataset foundation."""
+"""Synthetic and curated dataset foundation."""
 
 from opentrace.datasets.generator import (
     DatasetGenerator,

@@ -1,4 +1,4 @@
-"""M16 runner: subprocess pytest execution with timeout inside sandbox workspace."""
+"""Validation runner: subprocess pytest execution with timeout inside sandbox workspace."""
 
 from __future__ import annotations
 

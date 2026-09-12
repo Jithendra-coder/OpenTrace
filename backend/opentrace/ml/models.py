@@ -1,4 +1,4 @@
-"""Typed M8 experiment, split, and prediction records."""
+"""Typed experiment, split, and prediction records."""
 
 from __future__ import annotations
 

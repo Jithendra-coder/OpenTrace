@@ -1,4 +1,4 @@
-"""Direct, evidence-backed API-change impact matching for M4."""
+"""Direct, evidence-backed API-change impact matching."""
 
 from opentrace.impact.matcher import DirectImpactMatcher, MatchingPolicy
 from opentrace.impact.models import (
