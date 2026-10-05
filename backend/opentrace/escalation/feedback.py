@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
 from opentrace.escalation.models import (
     EscalationAction,
@@ -46,7 +46,7 @@ def write_feedback_record(
     feedback_dir.mkdir(parents=True, exist_ok=True)
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    record_id = _make_record_id(generation_result, timestamp)
+    record_id = uuid4().hex[:16]
 
     patch = generation_result.patch
     record = FeedbackRecord(
@@ -117,12 +117,3 @@ def load_feedback_records(feedback_dir: Path | str) -> list[FeedbackRecord]:
                 # should log this).
                 pass
     return records
-
-
-def _make_record_id(
-    generation_result: MigrationGenerationResult,
-    timestamp: str,
-) -> str:
-    patch = generation_result.patch
-    raw = f"{patch.id if patch else 'no-patch'}-{timestamp}"
-    return hashlib.sha256(raw.encode("utf-8")).hexdigest()[:16]

@@ -3,7 +3,7 @@
 <div align="center">
 
 [![Python 3.10 | 3.11 | 3.12 | 3.13](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue.svg)](https://www.python.org/)
-[![Tests](https://img.shields.io/badge/tests-220%20passed%20(100%25)-success.svg)](https://github.com/Jithendra-coder/OpenTrace)
+[![Tests](https://github.com/Jithendra-coder/OpenTrace/actions/workflows/opentrace.yml/badge.svg)](https://github.com/Jithendra-coder/OpenTrace/actions/workflows/opentrace.yml)
 [![GitHub](https://img.shields.io/badge/GitHub-Jithendra--coder%2FOpenTrace-black?logo=github)](https://github.com/Jithendra-coder/OpenTrace)
 [![License: MIT](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
 [![UI: Dashboard](https://img.shields.io/badge/UI-Single--Page%20Dashboard-black.svg)](#interactive-dashboard)
@@ -20,7 +20,7 @@
 
 **OpenTrace** is a high-performance developer platform engineered by **Jithendra** ([@Jithendra-coder](https://github.com/Jithendra-coder)) for automated API change impact analysis and adaptive code migration. When upstream OpenAPI contracts evolve, downstream services and repositories break silently. OpenTrace eliminates this problem by analyzing contract diffs and propagating them directly into application source code:
 
-1. **Detects** 100% of breaking changes between OpenAPI specifications (schema removals, route mutations, parameter churn).
+1. **Compares** supported OpenAPI contract changes, including removed operations, newly required parameters, security requirement changes, and schema changes. Detection is limited to the normalized contract patterns implemented here; it is not a guarantee that every real-world incompatibility is found. See the [change engine](backend/opentrace/contracts/changes.py) and [migration support matrix](backend/opentrace/migration/README.md).
 2. **Traces** affected files, functions, and call sites across codebases using Python AST parsing and modern TypeScript/JavaScript scanners.
 3. **Synthesizes** targeted migration patches using the **RouteForge** adaptive strategy selection engine (Economy, Balanced, Critical).
 4. **Validates** patches inside an isolated ephemeral sandbox (copies repo → applies patch → executes regression tests → verifies syntax → cleans up).
