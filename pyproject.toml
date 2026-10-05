@@ -14,7 +14,7 @@ dependencies = [
     "numpy>=1.24,<3.0",
     "pydantic-settings>=2.6,<3.0",
     "PyYAML>=6.0,<7.0",
-    "scikit-learn>=1.3,<2.0",
+    "scikit-learn>=1.6.1,<1.7",
     "uvicorn>=0.30,<1.0",
     "xgboost>=1.7,<4.0",
 ]
@@ -32,6 +32,7 @@ Issues = "https://github.com/Jithendra-coder/OpenTrace/issues"
 [project.optional-dependencies]
 dev = [
     "httpx>=0.27,<1.0",
+    "httpx2",
     "mypy>=1.13,<2.0",
     "pytest>=8.3,<9.0",
     "ruff>=0.8,<1.0",

@@ -1,0 +1,2 @@
+data/impact_benchmark/*.jsonl text eol=lf
+data/impact_benchmark/*.json text eol=lf
