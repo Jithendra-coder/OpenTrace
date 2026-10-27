@@ -10,6 +10,7 @@ _OPENTRACE_DIR = ".opentrace"
 _ANALYSIS_FILE = "analysis.json"
 _MIGRATION_PLAN_FILE = "migration-plan.json"
 _VALIDATION_FILE = "validation-result.json"
+_GENERATION_EVALUATION_FILE = "generation-evaluation.json"
 
 
 def workspace_dir(base: Path) -> Path:
@@ -34,6 +35,10 @@ def migration_plan_path(base: Path) -> Path:
 
 def validation_result_path(base: Path) -> Path:
     return workspace_dir(base) / _VALIDATION_FILE
+
+
+def generation_evaluation_path(base: Path) -> Path:
+    return workspace_dir(base) / _GENERATION_EVALUATION_FILE
 
 
 def ensure_workspace(base: Path) -> Path:

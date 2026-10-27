@@ -27,3 +27,4 @@ def test_controller_dispatch_mocked(mock_post):
     res = handle_plan_change(payload)
     assert res.get("status") == "active"
     assert mock_post.called
+    assert mock_post.call_args.kwargs["json"] == {"customer_id": "cust_ent_8841"}

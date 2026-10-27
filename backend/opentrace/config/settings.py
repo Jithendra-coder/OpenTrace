@@ -3,7 +3,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import Field, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _VALID_LOG_LEVELS = {"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"}
@@ -19,8 +19,14 @@ class Settings(BaseSettings):
     service_name: Literal["opentrace"] = "opentrace"
     debug: bool = False
     ai_enabled: bool = False
+    ai_provider: Literal["auto", "openai", "gemini", "anthropic", "ollama"] = "auto"
     ai_provider_id: str = "disabled"
     ai_provider_endpoint: str | None = None
+    ollama_host: str = "http://localhost:11434"
+    openai_api_key: SecretStr | None = Field(default=None, repr=False)
+    gemini_api_key: SecretStr | None = Field(default=None, repr=False)
+    google_api_key: SecretStr | None = Field(default=None, repr=False)
+    anthropic_api_key: SecretStr | None = Field(default=None, repr=False)
     ai_model_small: str | None = None
     ai_model_medium: str | None = None
     ai_model_strong: str | None = None

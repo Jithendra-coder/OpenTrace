@@ -10,7 +10,7 @@
 
 **Know precisely what an API breaking change breaks — and get a validated migration patch before you ship.**
 
-[Quickstart](#quick-demo) • [Architecture](#architecture) • [CLI Reference](#cli-reference) • [RouteForge Engine](#routeforge-engine) • [Sandbox Validation](#sandbox-validation) • [GitHub Action](#github-actions-cicd) • [Web Dashboard](#dashboard)
+[Quickstart](#quick-demo) • [Architecture](#architecture) • [Verified Results](#verified-results) • [CLI Reference](#cli-reference) • [RouteForge Engine](#routeforge-engine) • [Sandbox Validation](#sandbox-validation) • [GitHub Action](#github-actions-cicd) • [Web Dashboard](#dashboard)
 
 </div>
 
@@ -62,12 +62,14 @@ OpenTrace includes self-contained sample projects to test end-to-end immediately
 opentrace analyze --old sample1/api_v1.yaml --new sample1/api_v2.yaml --repo sample1
 opentrace migrate --policy balanced
 opentrace validate
+opentrace evaluate
 opentrace status
 
 # Or run on Sample 2 (Enterprise Billing Platform)
 opentrace analyze --old sample2/api_v1.yaml --new sample2/api_v2.yaml --repo sample2
 opentrace migrate --policy critical
 opentrace validate
+opentrace evaluate
 opentrace status
 ```
 
@@ -78,12 +80,25 @@ $env:OPENTRACE_WORKSPACE = "."
 uvicorn opentrace.main:app --port 8000
 ```
 
+### Run the Dashboard with Docker Compose
+
+With Docker Engine or Docker Desktop and Compose v2 installed:
+
+```powershell
+docker compose up --build
+```
+
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000). Compose mounts the current checkout at `/workspace` and binds
+the dashboard to loopback. To stop it, run `docker compose down`. The container does not mount the host Docker socket;
+run `opentrace validate` on a host with Docker available, because validation fails closed without its isolated runner.
+
 ### 4. Running OpenTrace on Your Own Repository
 
 ```powershell
 opentrace analyze --old current_api.json --new new_api.json --repo path/to/your_code_repo
 opentrace migrate --policy balanced
 opentrace validate
+opentrace evaluate
 opentrace apply --yes
 ```
 
@@ -187,30 +202,33 @@ OpenTrace  Analyze
 ## Architecture
 
 ```
-OpenAPI Spec (old) ──┐
-OpenAPI Spec (new) ──┤  Contract Comparison ──────► Breaking Changes Detection
-                     │
-Source Repository ───┤  AST Static Analysis ──────► Direct + Transitive Impacts
-                     │                              (Call Graph, Blast Radius)
-                     │
-                     ├── Risk & Impact Baselines ─► Probabilistic Impact Scoring
-                     │
-                     ├── AST Migration Engine ────► Deterministic Patch Synthesis
-                     │
-                     ├── RouteForge Strategy ─────► Adaptive Policy Decision
-                     │                              (Economy, Balanced, Critical)
-                     │
-                     ├── Patch Synthesis ─────────► Bounded Code Transformations
-                     │
-                     ├── Ephemeral Sandbox ───────► Test Suite Verification & Proof
-                     │
-                     ├── Escalation System ───────► Adaptive Feedback Persistence
-                     │
-                     ├── High-Speed CLI ──────────► opentrace CLI Core Commands
-                     │
-                     ├── GitHub Automation ───────► Audited Draft Pull Request
-                     │
-                     └── Web Dashboard ───────────► Real-Time System Telemetry
+Old + new OpenAPI ─┐
+Source repository ─┴─► Contract diff + AST/call graph analysis
+                              │
+                              ▼
+                       Impact evidence
+                              │
+                              ▼
+                       RouteForge policy
+                              │
+                              ▼
+             Graph-grounded RAG (M14 context selector)
+             bounded source spans + hashes + provenance
+                              │
+                              ▼
+               Structured candidate generation (M15)
+                              │
+                              ▼
+             Deterministic schema/path/hash/syntax gates
+                              │
+                              ▼
+             Temporary-copy patch + test validation
+                              │
+                              ▼
+             Per-run retrieval/generation/evidence report
+                              │
+                              ▼
+                 Human review → apply or draft PR
 ```
 
 ---
@@ -224,11 +242,65 @@ OpenTrace can be invoked via the `opentrace` binary or directly via Python with 
 | Command | Key Arguments | Purpose |
 |---|---|---|
 | `analyze` | `--old <file> --new <file> --repo <dir> [--output-dir <dir>]` | Compares OpenAPI specs and recursively scans all repository folders for affected code. |
-| `migrate` | `[--policy economy\|balanced\|critical] [--workspace <dir>] [--ai-enabled]` | Synthesizes an AST migration patch using the RouteForge decision engine. |
-| `validate` | `[--workspace <dir>] [--timeout <seconds>]` | Applies patch inside an isolated sandbox and runs test verification. |
+| `migrate` | `[--policy economy\|balanced\|critical] [--workspace <dir>] [--ai-enabled]` | Builds a bounded migration candidate from selected impact context; live LLM use is opt-in. |
+| `validate` | `[--workspace <dir>] [--timeout <seconds>]` | Applies the candidate in a temporary repository copy, checks syntax, and runs tests. |
+| `evaluate` | `[--workspace <dir>]` | Writes a deterministic per-run report for retrieval, generation, and validation evidence. |
 | `apply` | `[--workspace <dir>] [--yes]` | Applies validated patches directly to source files on disk. |
 | `status` | `[--workspace <dir>]` | Shows current workspace state, analysis results, and migration status. |
 | `pr` | `[--workspace <dir>] [--dry-run] [--base-branch <branch>]` | Creates a verified draft GitHub Pull Request with audit evidence. |
+
+### Live AI Provider Setup
+
+Migration generation supports OpenAI, Gemini, Anthropic, and local Ollama. It stays deterministic by default; use
+`--ai-enabled` (or `AI_ENABLED=true`) to opt into a live provider. Set `AI_PROVIDER`, its API key, and the model ID for
+the selected route (`AI_MODEL_SMALL` for economy/balanced, `AI_MODEL_STRONG` for critical). Provider `auto` uses an
+available cloud key, then tries Ollama at `OLLAMA_HOST` or `http://localhost:11434`.
+
+```powershell
+$env:AI_PROVIDER = "openai"
+$env:OPENAI_API_KEY = "your-api-key"
+$env:AI_MODEL_SMALL = "your-supported-model-id"
+opentrace migrate --policy balanced --ai-enabled
+opentrace validate
+opentrace evaluate
+```
+
+The provider receives only selected migration context. Responses must match the strict candidate schema and pass path,
+source-hash, overlap, size, and syntax checks. Generated patches remain proposals until sandbox validation and review;
+use Ollama when repository code must stay on a machine you control. Keep provider keys in environment variables or an
+ignored `.env` file, never in a committed config file.
+
+### AI architecture and RAG choice
+
+OpenTrace uses **graph-grounded, structured RAG**. It compares the old and new OpenAPI contracts, traces API call sites
+and affected symbols through the static call graph, then retrieves only evidence-addressed source spans. Direct API
+targets and required contract evidence are selected first; nearby callers are added by graph distance while respecting
+the file and character budgets. Each selected item carries a source hash and provenance, and omissions and uncertainty
+are recorded. The model receives those bounded items—not the whole repository—and may propose only edits authorized by
+the retrieved context.
+
+This is the right first retrieval strategy for code migration because the key question is *which exact code depends on
+the changed API?* Graph edges and API evidence answer that with traceable file/symbol links. Dense-vector retrieval can
+surface code that sounds similar but is not a caller, and it cannot establish dependency direction on its own. OpenTrace
+does not need embeddings or a vector database for this path; add lexical or vector retrieval only if measured graph
+coverage leaves relevant call sites unresolved, and retain the graph/provenance checks as the authority.
+
+The flow is: **contract and code analysis → graph-grounded retrieval → RouteForge strategy → strict structured
+candidate generation → deterministic source/path/syntax checks → temporary-copy tests → evaluation report and human
+review**. Retrieval improves relevance and context efficiency; it does not prove a repair is correct. Generation is
+schema-checked and bounded, validation checks patch application, syntax, and repository tests, and `opentrace evaluate`
+records those gates plus the retrieval trace. The report deliberately marks semantic correctness as unassessed unless a
+curated, repository-held-out benchmark supplies reviewed expected outcomes.
+
+M9 evaluates impact-ranking models and M13 evaluates the routing strategy. The new per-run report evaluates the
+retrieval/generation/validation evidence for one migration. It is a useful operational trace, not a substitute for a
+large labeled repair benchmark.
+
+LangChain, LangGraph, and LangSmith are **not required in the current architecture**. OpenTrace already has typed
+provider and workflow boundaries. Add LangGraph if the workflow grows into durable branching, retries, approvals, or
+pause/resume state; add LangChain only if its integrations materially reduce custom adapter code; add LangSmith if
+hosted traces and collaborative experiment management are needed and source-code retention policy permits it. None of
+those frameworks replaces graph-grounded retrieval, deterministic validation, or a held-out evaluation set.
 
 ---
 
@@ -242,7 +314,7 @@ python -m opentrace.cli.main analyze --old path\to\old_api.json --new path\to\ne
 :: 2. Generate migration plan
 python -m opentrace.cli.main migrate --policy balanced
 
-:: 3. Test patch in isolated sandbox
+:: 3. Validate patch in a temporary repository copy
 python -m opentrace.cli.main validate
 
 :: 4. View workspace status
@@ -260,7 +332,7 @@ opentrace analyze --old "path/to/old_api.json" --new "path/to/new_api.json" --re
 # 2. Migrate
 opentrace migrate --policy balanced
 
-# 3. Validate in sandbox
+# 3. Validate in a temporary repository copy
 opentrace validate
 
 # 4. Status
@@ -278,7 +350,7 @@ opentrace analyze --old path/to/old_api.json --new path/to/new_api.json --repo p
 # 2. Migrate
 opentrace migrate --policy balanced
 
-# 3. Validate in sandbox
+# 3. Validate in a temporary repository copy
 opentrace validate
 
 # 4. Status
@@ -325,6 +397,7 @@ All state is recorded cleanly in the `.opentrace/` workspace folder:
 | `.opentrace/analysis.json` | `analyze` | Contract changes, direct impact sites, and indirect dependency graph |
 | `.opentrace/migration-plan.json` | `migrate` | Concrete AST edits, RouteForge strategy, and patch diff |
 | `.opentrace/validation-result.json` | `validate` | Sandbox test results, execution durations, and syntax checks |
+| `.opentrace/generation-evaluation.json` | `evaluate` | Retrieval budget/provenance, generation outcome, and validation gates; semantic correctness is not inferred |
 | `.opentrace/pr-audit.json` | `pr` | Branch reference, commit hash, PR link, and safety gate verification |
 | `.opentrace/feedback/*.jsonl` | `apply` | Developer feedback history (ACCEPTED, REJECTED, DEFERRED) |
 
@@ -346,7 +419,7 @@ Launch the dashboard locally via Uvicorn to access all interactive tools:
 | **Overview** | High-level telemetry, breaking changes summary, files affected, and interactive SVG Call Graph |
 | **Analyze** | Interactive OpenAPI comparison with file browser and 1-click demo loaders |
 | **Migrate** | RouteForge policy selection (Economy, Balanced, Critical) and unified diff viewer |
-| **Validate** | Real-time sandbox test verification with test counts and isolated runtime logs |
+| **Validate** | Test verification with pass counts, duration, and runtime logs |
 | **Pull Requests** | One-click draft PR creation with full audit trail and GitHub links |
 | **Feedback** | History of accepted, rejected, or deferred patches |
 | **Settings** | Workspace directory settings, version information, and configuration guides |
@@ -382,18 +455,21 @@ image build needs network access once; test execution itself has no network.
 
 ## Quality & Test Suite
 
-The OpenTrace test suite contains 220 automated unit and integration tests covering the entire pipeline:
+Run the complete unit and integration suite from the repository root:
 
 ```powershell
-# Run the complete test suite
-pytest -v
-
-# Run unit tests only (180 tests)
-pytest tests/unit/ -q
-
-# Run integration tests only (40 tests)
-pytest tests/integration/ -q
+python -m pytest -q
 ```
+
+### Verified Results (2026-10-28)
+
+The current checkout passed **234 tests**. Its static self-scan parsed **181/181 source files**, found **1,528 symbols** and **25 HTTP call sites**, and reported zero failed files. Two explicit uncertainty warnings remain in test fixtures.
+
+The migration screenshot is a bundled fixture run using the deterministic fake provider. The repository screenshot is the actual OpenTrace checkout's test and source-scan result.
+
+![Fixture-backed migration run: graph-grounded retrieval and passing validation](assets/demo-results/verified-migration.png)
+
+![Actual OpenTrace repository: full test suite and source self-scan](assets/demo-results/actual-project.png)
 
 ---
 
@@ -408,17 +484,17 @@ OpenTrace/
 │   ├── ml/                  Impact-ranking baselines and evaluation
 │   ├── migration/           Deterministic AST patch engine
 │   ├── routeforge/          Dataset generator, baselines, and learned router
-│   ├── migration_context/   AST context selection
+│   ├── migration_context/   Bounded graph-grounded RAG context selection
 │   ├── ai_migration/        Patch synthesis protocols and provider adapters
-│   ├── validation/          Ephemeral sandbox runner & Docker isolation
+│   ├── validation/          Docker-required isolated test runner
 │   ├── escalation/          Adaptive repair escalation & feedback persistence
-│   ├── cli/                 opentrace CLI (analyze/migrate/validate/apply/pr/status)
+│   ├── cli/                 opentrace CLI (analyze/migrate/validate/evaluate/apply/pr/status)
 │   ├── github/              GitHub API integration, git commands, PR templates
 │   └── api/                 FastAPI dashboard endpoints
 ├── frontend/                Noir single-page dashboard (HTML + Tailwind + Vanilla JS)
-├── tests/                   Complete 220-test automated suite
-│   ├── unit/                180 unit tests
-│   └── integration/         40 integration tests
+├── tests/                   Unit and integration test suite
+│   ├── unit/
+│   └── integration/
 ├── sample1/                 Payment Service sample API & caller service
 ├── sample2/                 Billing Platform sample API & caller service
 ├── demo/                    E-commerce demo microservices

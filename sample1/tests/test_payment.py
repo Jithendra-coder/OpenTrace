@@ -25,6 +25,7 @@ def test_create_payment_request(mock_post):
 
     res = create_payment(amount=49.99, currency="USD")
     mock_post.assert_called_once()
+    assert mock_post.call_args.kwargs["json"] == {"currency": "USD"}
     assert res is not None
 
 

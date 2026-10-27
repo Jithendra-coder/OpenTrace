@@ -5,11 +5,19 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-from opentrace.ai_migration import DeterministicFakeProvider, GenerationConfiguration, GenerationStatus
+from opentrace.ai_migration import (
+    DeterministicFakeProvider,
+    GenerationConfiguration,
+    GenerationStatus,
+    LiveLLMProvider,
+    generation_configuration_from_settings,
+    generation_policy_from_settings,
+)
 from opentrace.cli.output import (
     bold, cyan, dim, green, print_banner, print_error,
     print_info, print_ok, print_section, print_warn, red, yellow,
 )
+from opentrace.config.settings import get_settings
 from opentrace.cli.workspace import (
     analysis_exists, analysis_path, migration_plan_exists,
     migration_plan_path, read_json, write_json,
@@ -48,6 +56,8 @@ def run_migrate(workspace: Path, policy: str, ai_enabled: bool) -> None:
     old_spec = Path(analysis["old_spec"])
     new_spec = Path(analysis["new_spec"])
     changes_count = analysis.get("changes_count", 0)
+    settings = get_settings()
+    ai_enabled = ai_enabled or settings.ai_enabled
 
     print_banner("OpenTrace  Migrate")
     print_info(f"Policy    : {policy}")
@@ -66,18 +76,45 @@ def run_migrate(workspace: Path, policy: str, ai_enabled: bool) -> None:
     # --- Generate migration plan ---
     print(f"  Running migration pipeline...")
     try:
-        # Always use the DeterministicFakeProvider for local demo mode.
-        # A real AI provider can be plugged in by implementing GenerationProvider.
-        provider = DeterministicFakeProvider()
-        configuration = GenerationConfiguration(
-            ai_enabled=True,  # fake provider counts as "enabled" for demo
-            provider_id="deterministic-fake-v1",
-            model_by_strategy={
-                RouteChoice.SMALL: "small-model",
-                RouteChoice.MEDIUM: "medium-model",
-                RouteChoice.STRONG: "strong-model",
-            },
-        )
+        if ai_enabled:
+            api_keys = {
+                "openai": settings.openai_api_key.get_secret_value()
+                if settings.openai_api_key
+                else None,
+                "gemini": (settings.gemini_api_key or settings.google_api_key).get_secret_value()
+                if settings.gemini_api_key or settings.google_api_key
+                else None,
+                "anthropic": settings.anthropic_api_key.get_secret_value()
+                if settings.anthropic_api_key
+                else None,
+            }
+            provider_name = settings.ai_provider
+            if provider_name == "auto":
+                provider_name = next(
+                    (name for name in ("openai", "anthropic", "gemini") if api_keys[name]),
+                    "ollama",
+                )
+            provider = LiveLLMProvider(
+                provider_name=provider_name,
+                api_key=api_keys.get(provider_name),
+                ollama_host=settings.ai_provider_endpoint or settings.ollama_host,
+            )
+            configuration = generation_configuration_from_settings(
+                settings.model_copy(
+                    update={"ai_enabled": True, "ai_provider_id": provider.adapter_id}
+                )
+            )
+        else:
+            provider = DeterministicFakeProvider()
+            configuration = GenerationConfiguration(
+                ai_enabled=True,
+                provider_id=provider.adapter_id,
+                model_by_strategy={
+                    RouteChoice.SMALL: "small-model",
+                    RouteChoice.MEDIUM: "medium-model",
+                    RouteChoice.STRONG: "strong-model",
+                },
+            )
 
         context_selection = analyze_migration_context_vertical_slice(
             old_spec, new_spec, repo, routing_decision
@@ -85,7 +122,7 @@ def run_migrate(workspace: Path, policy: str, ai_enabled: bool) -> None:
         context = context_selection.context
 
         from opentrace.ai_migration.generator import MigrationGenerator
-        gen_result = MigrationGenerator().generate(
+        gen_result = MigrationGenerator(generation_policy_from_settings(settings)).generate(
             context, routing_decision, configuration, provider
         )
     except Exception as exc:
@@ -124,9 +161,12 @@ def run_migrate(workspace: Path, policy: str, ai_enabled: bool) -> None:
         "schema_version": "migration-plan-v1",
         "policy": policy,
         "ai_enabled": ai_enabled,
+        "provider_adapter_id": patch.provider_adapter_id if patch else configuration.provider_id,
+        "model_id": patch.model_id if patch else None,
         "generation_status": gen_result.status.value,
         "routing_decision_id": routing_decision.decision_id,
         "selected_strategy": strategy.value,
+        "context_trace": _context_trace(context_selection),
         "repo": str(repo),
         "old_spec": str(old_spec),
         "new_spec": str(new_spec),
@@ -144,6 +184,47 @@ def run_migrate(workspace: Path, policy: str, ai_enabled: bool) -> None:
     else:
         print_warn("No patch was generated. Review the status above.")
     print()
+
+
+def _context_trace(selection: object) -> dict[str, object]:
+    """Record retrieval provenance and metrics without copying source text into the plan."""
+    from opentrace.migration_context.models import ContextSelection
+
+    if not isinstance(selection, ContextSelection):
+        return {}
+    context = selection.context
+    return {
+        "selection_status": selection.status.value,
+        "context_id": context.id if context else None,
+        "selection_policy_version": context.selection_policy_version if context else None,
+        "checksum": context.manifest.checksum if context else None,
+        "budget_limit_characters": (
+            context.budget.limit_characters if context else selection.budget.limit_characters
+        ),
+        "summary": selection.summary.model_dump(mode="json"),
+        "selected_items": [
+            {
+                "id": item.id,
+                "role": item.role.value,
+                "file": item.file,
+                "symbol": item.symbol,
+                "content_hash": item.content_hash,
+                "provenance_ids": list(item.provenance_ids),
+                "graph_distance": item.graph_distance,
+            }
+            for item in context.items
+        ] if context else [],
+        "omissions": [
+            {
+                "id": item.id,
+                "role": item.role.value,
+                "file": item.file,
+                "reason": item.reason.value,
+                "provenance_ids": list(item.provenance_ids),
+            }
+            for item in (context.omissions if context else selection.omissions)
+        ],
+    }
 
 
 def _build_cli_routing_decision(strategy: RouteChoice, policy: str) -> RoutingDecision:

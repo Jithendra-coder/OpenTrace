@@ -1,138 +1,92 @@
-# OpenTrace — Complete Architectural & Operational Guide
-> **API Change Intelligence & Automated Migration Engine**  
-> *Detect. Trace. Fix. Verify.*
+# OpenTrace — Operational and AI Architecture Guide
 
----
+OpenTrace compares OpenAPI versions, traces affected code, prepares a bounded migration candidate, and validates that candidate before a developer applies it. Generation is opt-in; the default path remains deterministic.
 
-## 1. Executive Summary & Core Purpose
-**OpenTrace** is an enterprise-grade developer infrastructure platform engineered to eliminate API contract breakage across complex software ecosystems. Modern microservices and distributed applications break when upstream OpenAPI contracts change. OpenTrace detects semantic diffs in OpenAPI specifications, traces their direct and transitive ripple impacts through repository source code using static AST analysis and call-graph blast-radius algorithms, synthesizes precise remediation patches using RouteForge ML strategies, validates patches in isolated sandboxes, and automatically opens draft GitHub pull requests.
-
----
-
-## 2. The Core Pipeline Workflow
+## Pipeline
 
 ```text
-  ┌───────────────────────┐
-  │  OpenAPI v1 vs v2    │
-  └──────────┬────────────┘
-             │
-             ▼
-    [Semantic Diff Engine] ─── Detects breaking property/endpoint removals
-             │
-             ▼
-    [AST Call Graph]       ─── Traces direct HTTP calls & callers through repo
-             │
-             ▼
-    [RouteForge Engine]    ─── Evaluates risk policy (Economy, Balanced, Critical)
-             │                 and routes to SMALL, MEDIUM, STRONG, or HUMAN strategy
-             ▼
-    [Patch Synthesizer]    ─── Generates unified multi-file unified diff
-             │
-             ▼
-    [Sandbox Runner]       ─── Creates isolated environment, applies patch,
-             │                 and runs test suite (zero host side-effects)
-             ▼
-    [GitHub Automation]    ─── Creates branch opentrace/migration-{id}
-                               and draft PR with full audit trail
+Old/new OpenAPI specs
+        ↓
+Contract diff + repository AST/call-site analysis
+        ↓
+Blast-radius graph + bounded, provenance-tracked RAG context
+        ↓
+RouteForge strategy + structured candidate generation
+        ↓
+Source/path/hash/syntax checks
+        ↓
+Docker-isolated tests + per-run evaluation report
+        ↓
+Developer review → apply or draft PR
 ```
 
----
+`analyze` and `migrate` do not modify the target repository. A generated patch is a proposal. `validate` applies it to a temporary repository copy, checks syntax, then runs the repository's pytest suite in a network-disabled Docker container with resource limits. Docker is required; validation fails closed if the daemon is unavailable and never executes repository tests on the host. The runner image contains only `pytest` and `requests`, so tests that need other packages can fail for missing dependencies.
 
-## 3. Brand Identity & The Noir Design System
+## Quick start
 
-### The Official API Gear + Plug Logo
-The OpenTrace emblem depicts an industrial **10-tooth precision gear** enclosing a **concentric circuit trace** with two **interlocking electrical/API plugs** connecting at the center through orbiting signal wires. It communicates:
-- **API & Systems**: Mechanical reliability, contract standardization.
-- **Trace & Connectivity**: Direct mapping between API endpoints and dependent application code.
-- **Precision**: Clean monochrome outline aesthetics.
+From the repository root:
 
-### The Noir Color System
-The UI adheres to a strict, developer-first monochrome foundation:
-- **Primary Black**: #000000 (Brand black, headers, primary buttons, active anchors).
-- **Secondary Slate**: #71717A (Muted labels, secondary indicators).
-- **Surfaces**:
-  - Main Canvas: #FFFFFF
-  - Elevated Cards & Sheets: #FAFAFA
-  - Action / Selection Pills: #F4F4F5
-  - Dividers & Borders: #E4E4E7
-  - Terminal & Code Viewers: #0B0F14
-- **Restrained Semantic Status Colors**:
-  - Breaking Changes / Errors: #EF4444
-  - Affected Files / Warnings: #F59E0B
-  - Tests Passed / Success: #10B981
-  - Information: #3B82F6
+```powershell
+python -m pip install -e .
+$env:PYTHONPATH = (Resolve-Path backend).Path
 
----
+opentrace analyze --old sample1/api_v1.yaml --new sample1/api_v2.yaml --repo sample1 --output-dir .opentrace-sample1
+opentrace migrate --workspace .opentrace-sample1 --policy balanced
+opentrace validate --workspace .opentrace-sample1
+opentrace evaluate --workspace .opentrace-sample1
+```
 
-## 4. The 4 Overview Metric Cards
-The OpenTrace Overview dashboard features four equal-height metric cards engineered with distinct top-accent indicators:
+The same commands work for a project of your own by supplying its old and new specifications and repository path. The CLI accepts `--old` and `--new` for the specification paths.
 
-| Metric Card | Accent Color | Hex | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Breaking Changes** | Red | #EF4444 | Total breaking API contract diffs detected |
-| **Files Affected** | Amber / Orange | #F59E0B | Count of direct code call-sites and indirect dependencies |
-| **Validation** | Slate / Noir | #18181B | Real-time sandbox test verification (TESTS_PASSED) |
-| **Open PRs / Scope** | Dark Slate | #18181B | Active pull request status and migration branch tracking |
+## Graph-grounded RAG
 
----
+OpenTrace implements **code RAG with static-graph retrieval**. It combines the OpenAPI change with exact API call sites, target symbols, and reachable callers. The context selector prioritizes required direct evidence, adds nearby callers within file and character budgets, and records provenance IDs, content hashes, graph distance, omissions, and a manifest checksum. The model receives these selected spans rather than the entire repository.
 
-## 5. Command-Line Interface (CLI) Guide
+This retrieval path does not use embeddings or a vector database: exact dependency links are more useful for “which code calls this changed API?” than semantic similarity alone. The current context selector reads evidence-addressed Python source spans. Retrieval coverage and context size are measurable; they do not establish that a generated repair is semantically correct. That requires a curated, repository-held-out benchmark with human-reviewed outcomes.
 
-OpenTrace provides a high-performance CLI with automatic fallback support for all previously configured environments.
+The per-run `opentrace evaluate` command writes `.opentrace/generation-evaluation.json`. It reports retrieval selection and omissions, generation status, patch identity, and validation gates. Semantic correctness is explicitly reported as `NOT_ASSESSED` unless a separate benchmark evaluates it.
 
-### Installation
-`ash
-# In the repository root
-pip install -e .
-`
+## Live model providers
 
-### Core Commands
-`ash
-# 1. Analyze an API change
-opentrace analyze --old-spec api/v1.yaml --new-spec api/v2.yaml --repo ./src
+The deterministic provider is the default. To opt into a live model, configure a provider, a supported model ID for the selected strategy, and credentials where required:
 
-# 2. Generate a migration plan
-opentrace migrate --policy balanced
+```powershell
+$env:AI_PROVIDER = "openai"
+$env:OPENAI_API_KEY = "your-api-key"
+$env:AI_MODEL_SMALL = "your-supported-model-id"
+opentrace migrate --workspace .opentrace-sample1 --policy balanced --ai-enabled
+opentrace validate --workspace .opentrace-sample1
+opentrace evaluate --workspace .opentrace-sample1
+```
 
-# 3. Validate the patch in an isolated sandbox
-opentrace validate
+Supported providers are OpenAI, Gemini, Anthropic, and local Ollama. `AI_PROVIDER=auto` selects a configured cloud key and otherwise tries Ollama at `OLLAMA_HOST` (default `http://localhost:11434`). Each live route needs a configured model ID. Missing credentials, model configuration, provider errors, and refusals are surfaced; live calls do not silently fall back to the fake provider.
 
-# 4. Check workspace status
-opentrace status
+Only selected context is sent to a provider. Cloud providers receive repository source text, so use Ollama when source must remain on a machine you control. Keep API keys in environment variables or an ignored `.env` file; never commit them.
 
-# 5. Apply the validated patch directly to the working tree
-opentrace apply --yes
+## CLI and dashboard
 
-# 6. Open a GitHub Draft Pull Request
-opentrace pr --workspace .opentrace
-`
+The main CLI commands are:
 
-*(Note: changemesh and specimpact are registered as fully functional backward-compatible command aliases).*
+| Command | Purpose |
+|---|---|
+| `analyze` | Compare contracts and inventory affected code. |
+| `migrate` | Build a deterministic or live-model candidate, depending on opt-in configuration. |
+| `validate` | Apply the candidate in a temporary copy and run syntax/tests. |
+| `evaluate` | Save retrieval, generation, and validation evidence. |
+| `apply` | Apply a validated proposal to the target repository. |
+| `pr` | Create a draft pull request from the reviewed migration workspace. |
 
----
+Start the local dashboard with:
 
-## 6. Web Dashboard Features
+```powershell
+$env:OPENTRACE_WORKSPACE = "."
+uvicorn opentrace.main:app --port 8000
+```
 
-OpenTrace serves an interactive single-page dashboard through its local server:
+The Docker Compose setup builds the dashboard image and serves it at `http://127.0.0.1:8000`. It does not mount the
+host Docker socket; run validation from a host CLI with Docker available rather than granting the dashboard container
+control of the host daemon.
 
-1. **Dashboard Overview**:
-   - 4 Metric cards with live telemetry.
-   - Interactive SVG Call Graph showing root API endpoint, direct impact nodes, and indirect ripple nodes.
-   - Breakdown tables for breaking changes and affected files.
-2. **Analyze Screen**:
-   - File and directory browser for Old Spec, New Spec, and Target Repository.
-   - 1-click **Load Demo Specs** button for instant end-to-end evaluation.
-3. **Migrate Screen**:
-   - Interactive RouteForge policy selection (Economy, Balanced, Critical).
-   - Strategy selection breakdown: SMALL, MEDIUM, STRONG, HUMAN.
-   - Unified Git-style diff viewer with additions and deletions highlighted.
-4. **Validate Screen**:
-   - Isolated sandbox environment runner.
-   - Test execution logs, duration benchmarking, and AST syntax verification.
-5. **API Simulator**:
-   - Pre-loaded microservices (Payments, Billing, Users, Checkout).
-   - Zero-typing contract mutation toggle with instant visual ripple graph update.
-6. **Multi-Environment CLI Auto-Installer**:
-   - 1-Click direct configuration across all detected Python installations on the host system.
-   - Fast 0.13s importlib spec probe ensuring 100% detection rate without timeouts.
-   - Downloadable .bat and .ps1 standalone installers.
+## Project verification
+
+Run the full test suite with `python -m pytest -q`. The checked-in demo screenshots and the latest verified counts are in the root README. The current results distinguish a fixture-backed migration demonstration from the actual repository's test and static self-scan; the fixture run uses a deterministic fake provider, not live LLM inference.

@@ -8,7 +8,7 @@ on:
 
 jobs:
   test-suite:
-    name: Core Test Suite (220 Tests)
+    name: Core Test Suite
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -52,6 +52,7 @@ jobs:
           opentrace analyze --old sample1/api_v1.yaml --new sample1/api_v2.yaml --repo sample1
           opentrace migrate --policy balanced
           opentrace validate
+          opentrace evaluate
           opentrace status
 
       - name: Validate Sample 2 (Enterprise Billing)
@@ -59,4 +60,38 @@ jobs:
           opentrace analyze --old sample2/api_v1.yaml --new sample2/api_v2.yaml --repo sample2
           opentrace migrate --policy balanced
           opentrace validate
+          opentrace evaluate
           opentrace status
+
+  container-smoke-test:
+    name: Docker Image Smoke Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build runtime image
+        run: |
+          docker compose config --quiet
+          docker compose build --pull
+
+      - name: Check CLI and dashboard health
+        shell: bash
+        run: |
+          docker run --rm --entrypoint opentrace opentrace:latest --version
+          cleanup() {
+            ci_exit_code=$?
+            docker compose logs opentrace || true
+            docker compose down --remove-orphans || true
+            exit "$ci_exit_code"
+          }
+          trap cleanup EXIT
+          docker compose up --detach --no-build
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:8000/health \
+              && curl --fail --silent http://127.0.0.1:8000/version; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "OpenTrace container did not become healthy"
+          exit 1

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 import json
 import pickle
 import subprocess
@@ -74,6 +75,16 @@ class FrozenModel:
     encoder: FeatureEncoder
     metadata: dict[str, Any]
     binary_checksum: str
+
+
+class _ArtifactUnpickler(pickle.Unpickler):
+    """Load the trusted frozen artifacts across the NumPy 1/2 module rename."""
+
+    def find_class(self, module: str, name: str) -> Any:
+        # NumPy 2 moved this stable helper under numpy._core; artifacts still use that path.
+        if module == "numpy._core.numeric":
+            module = "numpy.core.numeric"
+        return super().find_class(module, name)
 
 
 def _json_bytes(value: object) -> bytes:
@@ -319,7 +330,7 @@ def _load_model(
     sys.modules.setdefault("specimpact.ml", opentrace.ml)
     sys.modules.setdefault("changemesh.ml.features", opentrace.ml.features)
     sys.modules.setdefault("changemesh.ml", opentrace.ml)
-    payload = pickle.loads(model_path.read_bytes())
+    payload = _ArtifactUnpickler(io.BytesIO(model_path.read_bytes())).load()
     encoder = payload.get("encoder") if isinstance(payload, dict) else None
     if not isinstance(payload, dict) or (
         not isinstance(encoder, FeatureEncoder)

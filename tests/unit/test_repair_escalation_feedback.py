@@ -332,6 +332,7 @@ def test_multiple_feedback_records_are_all_loadable(tmp_path: Path, m14_context)
 
     records = load_feedback_records(tmp_path)
     assert len(records) == 2
+    assert len({record.record_id for record in records}) == 2
     actions = {r.user_action for r in records}
     assert UserAction.ACCEPTED in actions
     assert UserAction.REJECTED in actions

@@ -14,7 +14,8 @@ dependencies = [
     "numpy>=1.24,<3.0",
     "pydantic-settings>=2.6,<3.0",
     "PyYAML>=6.0,<7.0",
-    "scikit-learn>=1.6.1,<1.7",
+    # Frozen M9 pickle artifacts must run on their training version.
+    "scikit-learn==1.6.1",
     "uvicorn>=0.30,<1.0",
     "xgboost>=1.7,<4.0",
 ]

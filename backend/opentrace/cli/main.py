@@ -6,6 +6,7 @@ Commands:
   analyze   Detect API changes and find affected code.
   migrate   Generate a migration plan for detected changes.
   validate  Test the proposed patch in an isolated sandbox.
+  evaluate  Summarize retrieval, generation, and validation evidence.
   apply     Apply validated patches to the repository (requires confirmation).
   status    Show the current .opentrace/ workspace state.
 """
@@ -31,10 +32,11 @@ def _ensure_utf8_stdio() -> None:
 
 from opentrace.cli.commands.analyze import run_analyze
 from opentrace.cli.commands.apply import run_apply
+from opentrace.cli.commands.evaluate import run_evaluate
 from opentrace.cli.commands.migrate import run_migrate
+from opentrace.cli.commands.pr import run_pr
 from opentrace.cli.commands.status import run_status
 from opentrace.cli.commands.validate import run_validate
-from opentrace.cli.commands.pr import run_pr
 from opentrace.cli.output import print_banner, print_error
 
 
@@ -86,7 +88,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--ai-enabled",
         action="store_true",
         default=False,
-        help="Enable AI-assisted migration (requires AI provider configuration).",
+        help="Use the configured live LLM provider (requires credentials and a model ID).",
     )
 
     # --- validate ---
@@ -122,6 +124,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_status.add_argument("--workspace", default=".", metavar="DIR",
                           help="Directory containing .opentrace/ workspace (default: .).")
+
+    # --- evaluate ---
+    p_evaluate = sub.add_parser(
+        "evaluate",
+        help="Write a deterministic report for the current migration run.",
+    )
+    p_evaluate.add_argument("--workspace", default=".", metavar="DIR",
+                            help="Directory containing .opentrace/ workspace (default: .).")
 
     # --- pr ---
     p_pr = sub.add_parser(
@@ -181,6 +191,8 @@ def main() -> None:
             )
         elif args.command == "status":
             run_status(workspace=Path(args.workspace))
+        elif args.command == "evaluate":
+            run_evaluate(workspace=Path(args.workspace))
         elif args.command == "pr":
             run_pr(
                 workspace=Path(args.workspace),
