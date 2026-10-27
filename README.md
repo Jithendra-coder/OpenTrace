@@ -23,7 +23,7 @@
 1. **Compares** supported OpenAPI contract changes, including removed operations, newly required parameters, security requirement changes, and schema changes. Detection is limited to the normalized contract patterns implemented here; it is not a guarantee that every real-world incompatibility is found. See the [change engine](backend/opentrace/contracts/changes.py) and [migration support matrix](backend/opentrace/migration/README.md).
 2. **Traces** affected files, functions, and call sites across codebases using Python AST parsing and modern TypeScript/JavaScript scanners.
 3. **Synthesizes** targeted migration patches using the **RouteForge** adaptive strategy selection engine (Economy, Balanced, Critical).
-4. **Validates** patches inside an isolated ephemeral sandbox (copies repo → applies patch → executes regression tests → verifies syntax → cleans up).
+4. **Validates** patches in an ephemeral workspace and runs repository tests in a network-disabled Docker container. Test execution fails closed if Docker is unavailable; it never runs untrusted repository code on the host.
 5. **Opens an audited draft GitHub PR** with complete validation evidence, never auto-merging without developer review.
 6. **Visualizes the full impact surface** in an interactive single-page web dashboard with dynamic call graph telemetry.
 
@@ -365,13 +365,18 @@ RouteForge is the deterministic decision engine inside OpenTrace that selects op
 
 ## Sandbox Validation
 
-Before any patch touches the host repository, OpenTrace verifies it in an isolated ephemeral filesystem sandbox:
+Before any patch touches the host repository, OpenTrace creates an isolated ephemeral filesystem workspace:
 1. Creates a clean, temporary duplicate of the target repository.
 2. Applies the synthesized unified diff in memory.
 3. Compiles the abstract syntax tree to confirm zero syntax errors.
-4. Executes the repository's test suite (e.g. `pytest`) inside the isolated sandbox.
+4. Executes the repository's test suite in a Docker container with no network, a read-only host mount, and resource limits. Docker is required; no host-execution fallback is used.
 5. Captures test pass/fail metrics and execution duration.
-6. Cleans up all temporary workspaces, ensuring **zero mutations to the host filesystem**.
+6. Cleans up the temporary workspaces; the original repository stays unchanged.
+
+The disposable test image installs only `pytest` and `requests`; project-specific
+dependencies are not installed from the untrusted repository. Tests that need
+additional dependencies may therefore report missing-package failures. The
+image build needs network access once; test execution itself has no network.
 
 ---
 

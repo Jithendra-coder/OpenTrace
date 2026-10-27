@@ -3,18 +3,29 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from opentrace.cli.output import (
-    bold, cyan, dim, green, print_banner, print_error,
-    print_info, print_ok, print_section, print_warn, red, yellow,
+    bold,
+    cyan,
+    dim,
+    green,
+    print_banner,
+    print_error,
+    print_info,
+    print_ok,
+    print_section,
+    print_warn,
+    red,
+    yellow,
 )
 from opentrace.cli.workspace import (
-    migration_plan_path, migration_plan_exists,
-    read_json, validation_result_path, write_json,
+    migration_plan_exists,
+    migration_plan_path,
+    read_json,
+    validation_result_path,
 )
 from opentrace.escalation import UserAction, write_feedback_record
-from opentrace.validation.models import ValidationStatus
 
 
 def run_apply(workspace: Path, yes: bool) -> None:
@@ -34,7 +45,7 @@ def run_apply(workspace: Path, yes: bool) -> None:
         print_error("No patch in migration plan. Nothing to apply.")
         sys.exit(1)
 
-    repo = Path(plan["repo"])
+    repo = Path(plan["repo"]).resolve()
     val_data = read_json(validation_result_path(workspace)) or {}
     val_status = val_data.get("status", "UNKNOWN")
 
@@ -82,18 +93,36 @@ def run_apply(workspace: Path, yes: bool) -> None:
 
         if answer != "yes":
             print_warn("Aborted. No files were modified.")
-            _write_feedback(workspace, plan, patch_data, UserAction.REJECTED,
-                            rejection_reason="User declined at apply prompt.")
+            _write_feedback(
+                workspace,
+                plan,
+                patch_data,
+                UserAction.REJECTED,
+                rejection_reason="User declined at apply prompt.",
+            )
             sys.exit(0)
 
-    # --- Apply ---
+    # Validate every path and precondition before writing the first file.
     print(f"\n  Applying {len(edits)} edit(s) to {repo}...")
-    applied: list[str] = []
+    prepared: list[tuple[str, Path, str]] = []
     try:
         for edit in edits:
             file = edit["file"]
-            target = repo / file
-            if not target.exists():
+            relative = Path(file.replace("\\", "/"))
+            windows_path = PureWindowsPath(file)
+            if (
+                relative.is_absolute()
+                or windows_path.is_absolute()
+                or windows_path.drive
+                or ".." in relative.parts
+            ):
+                print_error(f"Refusing to modify a path outside the repository: {file}")
+                sys.exit(1)
+            target = (repo / relative).resolve()
+            if target == repo or not target.is_relative_to(repo):
+                print_error(f"Refusing to modify a path outside the repository: {file}")
+                sys.exit(1)
+            if not target.is_file():
                 print_error(f"File not found: {file}")
                 sys.exit(1)
             content = target.read_text(encoding="utf-8", errors="replace")
@@ -103,11 +132,21 @@ def run_apply(workspace: Path, yes: bool) -> None:
                 print_error(f"Original text no longer present in {file}.")
                 print_warn("The file may have changed since the patch was generated.")
                 print_warn("Re-run  opentrace analyze && opentrace migrate  to regenerate.")
-                _write_feedback(workspace, plan, patch_data, UserAction.REJECTED,
-                                rejection_reason="Precondition mismatch at apply time.")
+                _write_feedback(
+                    workspace,
+                    plan,
+                    patch_data,
+                    UserAction.REJECTED,
+                    rejection_reason="Precondition mismatch at apply time.",
+                )
                 sys.exit(1)
             new_content = content.replace(original, replacement, 1)
-            target.write_text(new_content, encoding="utf-8", newline="\n")
+
+            prepared.append((file, target, new_content))
+
+        applied: list[str] = []
+        for file, target, content in prepared:
+            target.write_text(content, encoding="utf-8", newline="\n")
             applied.append(file)
             print_ok(f"Applied → {file}")
 
@@ -149,7 +188,7 @@ def _write_feedback(
     """Write a feedback record after a human apply/reject decision."""
     try:
         # Reconstruct a minimal generation result for feedback provenance.
-        from opentrace.ai_migration.models import MigrationGenerationResult, GenerationStatus
+        from opentrace.ai_migration.models import GenerationStatus, MigrationGenerationResult
         from opentrace.cli.commands.validate import _reconstruct_patch
 
         patch = _reconstruct_patch(patch_data)

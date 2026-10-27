@@ -1,11 +1,13 @@
 """Hermetic Docker container sandbox for production isolated test execution."""
+
 from __future__ import annotations
 
 import shutil
 import subprocess
-import sys
+import tempfile
 import time
 from pathlib import Path
+from uuid import uuid4
 
 from opentrace.validation.models import SandboxConfig
 
@@ -24,12 +26,12 @@ def is_docker_available() -> bool:
 def run_tests_docker(
     repo_path: Path,
     config: SandboxConfig,
-    image: str = "python:3.10-slim",
+    image: str = "opentrace-test-runner:py310",
 ) -> tuple[int | None, int, int, int, bool, str | None, int]:
     """Execute test suite inside an ephemeral hermetic Docker container.
 
     Features:
-      - Mounts repo as read-only / temporary workspace
+      - Copies a read-only repo mount into disposable container tmpfs
       - Disables network egress (--network none) to prevent supply chain leaks
       - Enforces memory limit (512m) and CPU limit (1.0 core)
       - Wall-clock timeout enforcement
@@ -41,31 +43,48 @@ def run_tests_docker(
     tests_failed = 0
     tests_errors = 0
     failure_summary: str | None = None
-
-    # Normalise host path for Docker volume mounting on Windows
-    host_path = str(repo_path.resolve())
-
-    docker_cmd = [
-        "docker", "run", "--rm",
-        "--network", "none",
-        "--memory", "512m",
-        "--cpus", "1.0",
-        "-v", f"{host_path}:/app",
-        "-w", "/app",
-        image,
-        "sh", "-c", "pip install -q pytest requests && pytest --tb=short -q --no-header",
-    ]
+    container_name = f"opentrace-validation-{uuid4().hex}"
 
     try:
+        if not _ensure_test_image(image):
+            raise RuntimeError("Could not prepare the isolated test runner image")
+        docker_cmd = [
+            "docker",
+            "run",
+            "--name",
+            container_name,
+            "--network",
+            "none",
+            "--memory",
+            "512m",
+            "--cpus",
+            "1.0",
+            "--pids-limit",
+            "64",
+            "--read-only",
+            "--cap-drop=ALL",
+            "--security-opt=no-new-privileges:true",
+            "--user=65534:65534",
+            "--tmpfs",
+            "/tmp:rw,exec,size=256m,mode=1777",
+            "--mount",
+            f"type=bind,source={repo_path.resolve()},target=/input,readonly",
+            "-w",
+            "/tmp",
+            image,
+            "sh",
+            "-c",
+            "cp -a /input/. /tmp/repo && cd /tmp/repo && "
+            "pytest --tb=short -q --no-header >/tmp/pytest.log 2>&1; "
+            "status=$?; tail -c 65536 /tmp/pytest.log; exit $status",
+        ]
         proc = subprocess.run(
-            docker_cmd,
-            capture_output=True,
-            text=True,
-            timeout=config.timeout_seconds,
+            docker_cmd, capture_output=True, text=True, timeout=config.timeout_seconds
         )
         exit_code = proc.returncode
         combined = (proc.stdout or "") + (proc.stderr or "")
         from opentrace.validation.runner import _parse_counts, _sanitize_summary
+
         tests_passed, tests_failed, tests_errors = _parse_counts(combined)
         if exit_code != 0:
             failure_summary = _sanitize_summary(
@@ -80,6 +99,45 @@ def run_tests_docker(
     except Exception as exc:
         exit_code = 1
         failure_summary = f"Docker runner error: {exc}"
+    finally:
+        try:
+            subprocess.run(
+                ["docker", "rm", "--force", container_name],
+                capture_output=True,
+                timeout=10,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            pass
 
     duration_ms = int(time.monotonic() * 1000) - start_ms
-    return exit_code, tests_passed, tests_failed, tests_errors, timed_out, failure_summary, duration_ms
+    return (
+        exit_code,
+        tests_passed,
+        tests_failed,
+        tests_errors,
+        timed_out,
+        failure_summary,
+        duration_ms,
+    )
+
+
+def _ensure_test_image(image: str) -> bool:
+    try:
+        existing = subprocess.run(
+            ["docker", "image", "inspect", image], capture_output=True, timeout=10, check=False
+        )
+        if existing.returncode == 0:
+            return True
+        dockerfile = "FROM python:3.10-slim\nRUN pip install --no-cache-dir pytest requests\n"
+        with tempfile.TemporaryDirectory(prefix="opentrace-runner-") as context:
+            Path(context, "Dockerfile").write_text(dockerfile, encoding="utf-8")
+            built = subprocess.run(
+                ["docker", "build", "--tag", image, context],
+                capture_output=True,
+                timeout=180,
+                check=False,
+            )
+            return built.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False

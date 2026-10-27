@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -32,49 +30,18 @@ def run_tests(
     tests_errors = 0
     failure_summary: str | None = None
 
-    # Check if Docker sandbox isolation is requested and available
     import os
-    if os.environ.get("OPENTRACE_SANDBOX_MODE") == "docker":
-        from opentrace.validation.docker_sandbox import is_docker_available, run_tests_docker
-        if is_docker_available():
-            return run_tests_docker(repo_path, config)
 
-    try:
-        result = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "pytest",
-                "--tb=short",
-                "-q",
-                "--no-header",
-                # Note: --timeout=30 requires pytest-timeout; omitted for
-                # compatibility. Wall-clock timeout is enforced by subprocess.
-            ],
-            cwd=repo_path,
-            capture_output=True,
-            text=True,
-            timeout=config.timeout_seconds,
-        )
-        exit_code = result.returncode
-        combined = (result.stdout or "") + (result.stderr or "")
-        tests_passed, tests_failed, tests_errors = _parse_counts(combined)
-        if exit_code != 0:
-            failure_summary = _sanitize_summary(
-                combined,
-                config.max_failure_summary_lines,
-                config.max_failure_summary_line_chars,
-            )
-    except subprocess.TimeoutExpired:
-        timed_out = True
-        exit_code = None
-    except Exception as exc:
-        exit_code = -1
-        failure_summary = _sanitize_summary(
-            str(exc),
-            config.max_failure_summary_lines,
-            config.max_failure_summary_line_chars,
-        )
+    from opentrace.validation.docker_sandbox import is_docker_available, run_tests_docker
+
+    if os.environ.get("OPENTRACE_SANDBOX_MODE", "docker") != "docker":
+        exit_code = 1
+        failure_summary = "Host execution is disabled; set OPENTRACE_SANDBOX_MODE=docker."
+    elif not is_docker_available():
+        exit_code = 1
+        failure_summary = "Docker is required to run repository tests safely."
+    else:
+        return run_tests_docker(repo_path, config)
 
     duration_ms = _now_ms() - start_ms
     return (
