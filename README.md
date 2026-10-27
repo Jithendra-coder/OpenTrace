@@ -463,11 +463,11 @@ python -m pytest -q
 
 ### Verified Results (2026-10-28)
 
-The current checkout passed **234 tests**. Its static self-scan parsed **181/181 source files**, found **1,528 symbols** and **25 HTTP call sites**, and reported zero failed files. Two explicit uncertainty warnings remain in test fixtures.
+The current checkout passed **234 tests** locally in 32.81 seconds on Python 3.10.8. GitHub Actions also passed the suite on Python 3.10–3.13. Its static self-scan parsed **181/181 source files**, found **1,528 symbols** and **25 HTTP call sites**, and reported zero failed files. Two explicit uncertainty warnings remain in test fixtures.
 
-The migration screenshot is a bundled fixture run using the deterministic fake provider. The repository screenshot is the actual OpenTrace checkout's test and source-scan result.
+GitHub Actions passed the Docker image and Compose health smoke test, then validated both bundled migrations with 5/5 fixture tests passing in isolated containers ([run #40566606208](https://github.com/Jithendra-coder/OpenTrace/actions/runs/40566606208)). The migration screenshot uses the deterministic fake provider; the repository screenshot shows the actual OpenTrace checkout, not a sample.
 
-![Fixture-backed migration run: graph-grounded retrieval and passing validation](assets/demo-results/verified-migration.png)
+![Fixture-backed migration run: graph-grounded retrieval and Docker-isolated passing validation](assets/demo-results/verified-migration.png)
 
 ![Actual OpenTrace repository: full test suite and source self-scan](assets/demo-results/actual-project.png)
 
