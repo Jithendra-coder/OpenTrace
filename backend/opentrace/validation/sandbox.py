@@ -15,6 +15,9 @@ from opentrace.validation.models import SandboxConfig, ValidationStatus
 # Files that must never be read from or written to in any sandbox workspace.
 _SENSITIVE_FILE_NAMES = frozenset(
     {
+        ".netrc",
+        ".npmrc",
+        ".pypirc",
         "credentials",
         "credentials.json",
         "id_dsa",
@@ -24,11 +27,71 @@ _SENSITIVE_FILE_NAMES = frozenset(
         "known_hosts",
     }
 )
-_SENSITIVE_PARTS = frozenset({".aws", ".git", ".ssh", "credentials", "secrets"})
+_SENSITIVE_PARTS = frozenset(
+    {
+        ".aws",
+        ".azure",
+        ".changemesh",
+        ".docker",
+        ".git",
+        ".kube",
+        ".opentrace",
+        ".specimpact",
+        ".ssh",
+        ".terraform",
+        "credentials",
+        "secrets",
+    }
+)
 _SENSITIVE_SUFFIXES = frozenset({".key", ".pem", ".p12", ".pfx"})
+_IGNORED_NAMES = _SENSITIVE_PARTS | frozenset(
+    {
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".venv",
+        "build",
+        "dist",
+        "node_modules",
+        "venv",
+        "__pycache__",
+    }
+)
 
 
-def _is_safe_relative_path(raw: str) -> bool:
+def _ignore_repository_data(
+    root: Path, directory: str, names: list[str]
+) -> set[str]:
+    ignored: set[str] = set()
+    for name in names:
+        normalized = name.lower()
+        path = Path(directory) / name
+        if path.is_symlink():
+            try:
+                if not path.resolve().is_relative_to(root):
+                    ignored.add(name)
+                    continue
+            except OSError:
+                ignored.add(name)
+                continue
+        relative_parent = Path(directory).relative_to(root).parts
+        if (
+            normalized == "gcloud"
+            and relative_parent
+            and relative_parent[-1].lower() == ".config"
+        ):
+            ignored.add(name)
+            continue
+        if normalized in _IGNORED_NAMES or normalized.startswith(".env"):
+            ignored.add(name)
+        elif Path(name).suffix.lower() in _SENSITIVE_SUFFIXES:
+            ignored.add(name)
+        elif normalized in _SENSITIVE_FILE_NAMES:
+            ignored.add(name)
+    return ignored
+
+
+def is_safe_relative_path(raw: str) -> bool:
     """Return True only if raw resolves to a safe relative path.
 
     Rejects: absolute paths, path-traversal sequences, sensitive filenames,
@@ -36,13 +99,13 @@ def _is_safe_relative_path(raw: str) -> bool:
     """
     # Normalise platform separators before checking.
     try:
-        posix = PurePosixPath(raw)
+        posix = PurePosixPath(raw.replace("\\", "/"))
         win = PureWindowsPath(raw)
     except Exception:
         return False
 
     # Must not be absolute on either platform.
-    if posix.is_absolute() or win.is_absolute():
+    if posix.is_absolute() or win.is_absolute() or win.drive:
         return False
 
     # Must not traverse upward.
@@ -55,10 +118,17 @@ def _is_safe_relative_path(raw: str) -> bool:
         part_lower = part.lower()
         if part_lower in _SENSITIVE_PARTS:
             return False
+    if any(
+        part.lower() == ".config"
+        and index + 1 < len(parts)
+        and parts[index + 1].lower() == "gcloud"
+        for index, part in enumerate(parts)
+    ):
+        return False
 
     # Check filename.
     name_lower = posix.name.lower()
-    if name_lower in _SENSITIVE_FILE_NAMES:
+    if name_lower in _SENSITIVE_FILE_NAMES or name_lower.startswith(".env"):
         return False
     if posix.suffix.lower() in _SENSITIVE_SUFFIXES:
         return False
@@ -107,9 +177,20 @@ class SandboxWorkspace:
             tempfile.mkdtemp(prefix="opentrace-sandbox-")
         )
         self._created = True
-        # Copy the entire repository tree into the workspace.
+        # Keep secrets and tool state out of the test runner's input tree.
         dest = self._workspace / "repo"
-        shutil.copytree(self._root, dest, symlinks=False)
+        try:
+            shutil.copytree(
+                self._root,
+                dest,
+                symlinks=True,
+                ignore=lambda directory, names: _ignore_repository_data(
+                    self._root, directory, names
+                ),
+            )
+        except BaseException:
+            self._cleanup()
+            raise
         return self
 
     def __exit__(self, *_: object) -> None:
@@ -134,7 +215,7 @@ class SandboxWorkspace:
         """
         repo = self._workspace_repo()
         for edit in patch.edits:
-            if not _is_safe_relative_path(edit.file):
+            if not is_safe_relative_path(edit.file):
                 raise _PatchApplicationError(
                     f"edit targets an unsafe path: {edit.file!r}"
                 )

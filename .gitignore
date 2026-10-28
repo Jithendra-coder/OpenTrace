@@ -19,6 +19,7 @@ dist/
 .vscode/
 *.code-workspace
 .opentrace/
+.changemesh/
 .specimpact/
 .gemini/
 *.log

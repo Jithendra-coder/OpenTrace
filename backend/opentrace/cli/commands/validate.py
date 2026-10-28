@@ -14,6 +14,10 @@ from opentrace.cli.workspace import (
     read_json, validation_result_path, write_json,
 )
 from opentrace.validation import SandboxConfig, ValidationStatus, validate_patch
+from opentrace.validation.models import (
+    VALIDATION_RESULT_SCHEMA_VERSION,
+    patch_data_checksum,
+)
 
 
 def run_validate(workspace: Path, timeout: int) -> None:
@@ -66,14 +70,16 @@ def run_validate(workspace: Path, timeout: int) -> None:
 
     # --- Save result ---
     result = {
-        "schema_version": "validation-result-v1",
+        "schema_version": VALIDATION_RESULT_SCHEMA_VERSION,
         "patch_id": evidence.patch_id,
+        "patch_checksum": patch_data_checksum(patch_data),
         "status": evidence.status.value,
         "patch_applied": evidence.patch_applied,
         "syntax_ok": evidence.syntax_ok,
         "tests_collected": evidence.tests_collected,
         "tests_passed": evidence.tests_passed,
         "tests_failed": evidence.tests_failed,
+        "tests_errors": evidence.tests_errors,
         "exit_code": evidence.exit_code,
         "timeout": evidence.timeout,
         "failure_summary": evidence.failure_summary,
@@ -92,10 +98,11 @@ def run_validate(workspace: Path, timeout: int) -> None:
         print_info("Run  opentrace apply  to apply the patch to the repository.")
     elif evidence.status is ValidationStatus.NO_TESTS_COLLECTED:
         print_warn("No tests were collected in the sandbox.")
-        print_info("You may still run  opentrace apply  to apply the patch manually.")
+        print_info("Apply remains blocked until sandbox tests pass.")
     elif evidence.status is ValidationStatus.TESTS_FAILED:
-        print_warn("Some tests failed. Review the failure summary above before applying.")
-        print_info("Run  opentrace apply  to apply anyway (with confirmation).")
+        print_warn(
+            "Some tests failed. Review the failure summary and fix the migration before applying."
+        )
     else:
         print_warn(f"Validation status: {evidence.status.value} — review before applying.")
     print()

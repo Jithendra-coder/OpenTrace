@@ -127,7 +127,7 @@ def test_dashboard_projects_api(tmp_path: Path, monkeypatch: pytest.MonkeyPatch)
     monkeypatch.setenv("SPECIMPACT_HOME", str(home_dir))
 
     app = create_app()
-    client = TestClient(app)
+    client = TestClient(app, base_url="http://localhost")
 
     # Test GET /api/projects
     res = client.get("/api/projects")

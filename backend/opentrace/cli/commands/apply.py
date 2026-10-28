@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from pathlib import Path, PureWindowsPath
+from pathlib import Path
 
 from opentrace.cli.output import (
     bold,
@@ -26,6 +26,11 @@ from opentrace.cli.workspace import (
     validation_result_path,
 )
 from opentrace.escalation import UserAction, write_feedback_record
+from opentrace.github.git import GitError, apply_edits_to_working_tree
+from opentrace.validation.models import (
+    VALIDATION_RESULT_SCHEMA_VERSION,
+    patch_data_checksum,
+)
 
 
 def run_apply(workspace: Path, yes: bool) -> None:
@@ -55,16 +60,43 @@ def run_apply(workspace: Path, yes: bool) -> None:
     print_info(f"Validation     : {_status_display(val_status)}")
     print()
 
-    # --- Safety check ---
-    if val_status in ("PATCH_FAILED", "SYNTAX_ERROR", "SANDBOX_ERROR"):
-        print_error(f"Validation status {val_status} — cannot safely apply this patch.")
-        print_warn("Fix the patch or re-run  opentrace migrate  before applying.")
+    # Apply only the exact patch with complete passing evidence from the sandbox.
+    evidence_checks = {
+        "schema_version": val_data.get("schema_version") == VALIDATION_RESULT_SCHEMA_VERSION,
+        "patch_id": val_data.get("patch_id") == patch_data.get("id"),
+        "patch_checksum": val_data.get("patch_checksum")
+        == patch_data_checksum(patch_data),
+        "patch_applied": val_data.get("patch_applied") is True,
+        "syntax_ok": val_data.get("syntax_ok") is True,
+        "tests_collected": type(val_data.get("tests_collected")) is int
+        and val_data["tests_collected"] > 0,
+        "tests_passed": type(val_data.get("tests_passed")) is int
+        and val_data["tests_passed"] > 0,
+        "tests_failed": val_data.get("tests_failed") == 0,
+        "tests_errors": val_data.get("tests_errors") == 0,
+        "exit_code": val_data.get("exit_code") == 0,
+        "timeout": val_data.get("timeout") is False,
+        "workspace_created": val_data.get("workspace_created") is True,
+        "workspace_cleaned": val_data.get("workspace_cleaned") is True,
+        "test_counts": (
+            type(val_data.get("tests_collected")) is int
+            and type(val_data.get("tests_passed")) is int
+            and type(val_data.get("tests_failed")) is int
+            and type(val_data.get("tests_errors")) is int
+            and val_data["tests_collected"]
+            == val_data["tests_passed"]
+            + val_data["tests_failed"]
+            + val_data["tests_errors"]
+        ),
+    }
+    if val_status != "TESTS_PASSED" or not all(evidence_checks.values()):
+        print_error(
+            "Patch cannot be applied without complete passing validation evidence for this patch."
+        )
+        print_warn(
+            "Run  opentrace validate  again and apply only after tests pass in the sandbox."
+        )
         sys.exit(1)
-
-    if val_status == "TESTS_FAILED":
-        print_warn("Validation showed test failures. Applying may break the repository.")
-    elif val_status == "UNKNOWN":
-        print_warn("No validation result found. Run  opentrace validate  first.")
 
     # --- Show what will change ---
     edits = patch_data.get("edits", [])
@@ -102,54 +134,21 @@ def run_apply(workspace: Path, yes: bool) -> None:
             )
             sys.exit(0)
 
-    # Validate every path and precondition before writing the first file.
     print(f"\n  Applying {len(edits)} edit(s) to {repo}...")
-    prepared: list[tuple[str, Path, str]] = []
     try:
-        for edit in edits:
-            file = edit["file"]
-            relative = Path(file.replace("\\", "/"))
-            windows_path = PureWindowsPath(file)
-            if (
-                relative.is_absolute()
-                or windows_path.is_absolute()
-                or windows_path.drive
-                or ".." in relative.parts
-            ):
-                print_error(f"Refusing to modify a path outside the repository: {file}")
-                sys.exit(1)
-            target = (repo / relative).resolve()
-            if target == repo or not target.is_relative_to(repo):
-                print_error(f"Refusing to modify a path outside the repository: {file}")
-                sys.exit(1)
-            if not target.is_file():
-                print_error(f"File not found: {file}")
-                sys.exit(1)
-            content = target.read_text(encoding="utf-8", errors="replace")
-            original = edit["expected_original_text"]
-            replacement = edit["replacement_text"]
-            if original not in content:
-                print_error(f"Original text no longer present in {file}.")
-                print_warn("The file may have changed since the patch was generated.")
-                print_warn("Re-run  opentrace analyze && opentrace migrate  to regenerate.")
-                _write_feedback(
-                    workspace,
-                    plan,
-                    patch_data,
-                    UserAction.REJECTED,
-                    rejection_reason="Precondition mismatch at apply time.",
-                )
-                sys.exit(1)
-            new_content = content.replace(original, replacement, 1)
-
-            prepared.append((file, target, new_content))
-
-        applied: list[str] = []
-        for file, target, content in prepared:
-            target.write_text(content, encoding="utf-8", newline="\n")
-            applied.append(file)
+        applied = apply_edits_to_working_tree(repo, edits)
+        for file in applied:
             print_ok(f"Applied → {file}")
-
+    except GitError as exc:
+        print_error(str(exc))
+        _write_feedback(
+            workspace,
+            plan,
+            patch_data,
+            UserAction.REJECTED,
+            rejection_reason=str(exc),
+        )
+        sys.exit(1)
     except Exception as exc:
         print_error(f"Apply failed: {exc}")
         sys.exit(1)

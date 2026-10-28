@@ -116,7 +116,7 @@ def _print_next_step(workspace: Path) -> None:
             print(f"  {bold('Next:')} Review migration status ({status}) or re-run migrate with a supported policy.")
     else:
         data = read_json(validation_result_path(workspace)) or {}
-        if data.get("status") in ("TESTS_PASSED", "NO_TESTS_COLLECTED"):
+        if data.get("status") == "TESTS_PASSED":
             print(f"  {bold('Next:')} opentrace apply")
         else:
-            print(f"  {bold('Next:')} Review validation failures, then opentrace apply --yes or re-run migrate.")
+            print(f"  {bold('Next:')} Review validation failures, then re-run validate or migrate.")

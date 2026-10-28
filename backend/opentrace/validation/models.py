@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from enum import StrEnum
 
@@ -9,7 +10,15 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 VALIDATION_SCHEMA_VERSION = "validation-evidence-v1"
+VALIDATION_RESULT_SCHEMA_VERSION = "validation-result-v1"
 SANDBOX_CONFIG_VERSION = "sandbox-config-v1"
+
+
+def patch_data_checksum(patch_data: object) -> str:
+    canonical = json.dumps(
+        patch_data, sort_keys=True, separators=(",", ":"), default=str
+    )
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 class CanonicalModel(BaseModel):
@@ -98,10 +107,10 @@ class ValidationEvidence(CanonicalModel):
     # Timing
     duration_ms: int | None = Field(default=None, ge=0)
 
-    # Documented limitation for V1 (subprocess, not Docker)
+    # Document the container boundary and the intentionally small test image.
     limitations: tuple[str, ...] = (
-        "V1: subprocess isolation in temp directory — not Docker-isolated. "
-        "Not suitable for untrusted repository code without container boundary.",
+        "Tests run in a network-disabled Docker container with read-only source; "
+        "the runner image provides pytest and requests, not arbitrary project dependencies.",
     )
 
     @model_validator(mode="after")

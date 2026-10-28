@@ -19,6 +19,7 @@ from opentrace.validation import (
     ValidationStatus,
     validate_patch,
 )
+from opentrace.validation.sandbox import SandboxWorkspace
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -243,8 +244,61 @@ def test_validation_evidence_limitations_are_documented() -> None:
     evidence = validate_patch(patch, DEMO)
 
     assert len(evidence.limitations) >= 1
-    assert any("subprocess" in lim.lower() for lim in evidence.limitations)
-    assert any("docker" in lim.lower() for lim in evidence.limitations)
+    assert any("network-disabled docker" in lim.lower() for lim in evidence.limitations)
+    assert any(
+        "pytest" in lim.lower() and "requests" in lim.lower()
+        for lim in evidence.limitations
+    )
+
+
+def test_sandbox_copy_omits_secrets_and_preserves_symlinks(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "src").mkdir()
+    (repo / "src" / "module.py").write_text("value = 1", encoding="utf-8")
+    (repo / ".env.production").write_text("TOKEN=secret", encoding="utf-8")
+    (repo / ".aws").mkdir()
+    (repo / ".aws" / "credentials").write_text("secret", encoding="utf-8")
+    (repo / ".git").mkdir()
+    (repo / ".git" / "config").write_text("secret", encoding="utf-8")
+    (repo / ".opentrace").mkdir()
+    (repo / ".opentrace" / "migration-plan.json").write_text("secret", encoding="utf-8")
+    inside_link = repo / "module-link.py"
+    outside = tmp_path / "outside.txt"
+    outside.write_text("outside", encoding="utf-8")
+    try:
+        inside_link.symlink_to(Path("src/module.py"))
+        (repo / "external-link").symlink_to(outside)
+    except (OSError, NotImplementedError):
+        pytest.skip("Symlinks are unavailable on this Windows environment")
+
+    with SandboxWorkspace(repo, SandboxConfig()) as sandbox:
+        copied = sandbox.repo_path
+        assert (copied / "src" / "module.py").is_file()
+        assert not (copied / ".env.production").exists()
+        assert not (copied / ".aws").exists()
+        assert not (copied / ".git").exists()
+        assert not (copied / ".opentrace").exists()
+        assert (copied / "module-link.py").is_symlink()
+        assert not (copied / "external-link").exists()
+
+
+def test_sandbox_cleans_up_when_copy_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    import opentrace.validation.sandbox as sandbox_module
+
+    workspace = SandboxWorkspace(tmp_path, SandboxConfig())
+
+    def fail_copy(*_: object, **__: object) -> None:
+        raise OSError("copy failed")
+
+    monkeypatch.setattr(sandbox_module.shutil, "copytree", fail_copy)
+    with pytest.raises(OSError, match="copy failed"):
+        workspace.__enter__()
+
+    assert workspace.workspace_created is True
+    assert workspace.workspace_cleaned is True
 
 
 def test_valid_patch_reports_workspace_audit_fields() -> None:

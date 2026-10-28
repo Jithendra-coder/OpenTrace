@@ -4,8 +4,10 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from opentrace import __version__
@@ -37,7 +39,36 @@ def create_app() -> FastAPI:
     )
     @app.middleware("http")
     async def add_no_cache_header(request, call_next):
-        response = await call_next(request)
+        reject = False
+        if request.url.path.startswith("/api/"):
+            try:
+                host = (request.url.hostname or "").lower().rstrip(".")
+                reject = host not in {"localhost", "127.0.0.1", "::1"}
+            except ValueError:
+                reject = True
+        if request.url.path.startswith("/api/") and request.method in {
+            "POST", "PUT", "PATCH", "DELETE"
+        }:
+            origin = request.headers.get("origin")
+            reject |= request.headers.get("sec-fetch-site") == "cross-site"
+            if origin:
+                try:
+                    parts = urlsplit(origin)
+                    reject |= (
+                        parts.scheme != request.url.scheme
+                        or parts.netloc.casefold()
+                        != request.headers.get("host", "").casefold()
+                    )
+                except ValueError:
+                    reject = True
+        response = (
+            JSONResponse(
+                {"detail": "Cross-origin state changes are not allowed."},
+                status_code=403,
+            )
+            if reject
+            else await call_next(request)
+        )
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
         response.headers["Pragma"] = "no-cache"
         response.headers["Expires"] = "0"

@@ -15,6 +15,7 @@ from opentrace.github.git import (
     find_git_root,
     parse_github_owner_repo,
     stage_and_commit,
+    working_tree_is_clean,
 )
 from opentrace.github.pr_template import build_pr_body, build_pr_title
 
@@ -120,6 +121,65 @@ def test_apply_edits_precondition_mismatch_raises(tmp_path: Path) -> None:
         apply_edits_to_working_tree(repo, edits)
 
 
+def test_apply_edits_does_not_write_before_all_preconditions_pass(tmp_path: Path) -> None:
+    repo = _make_repo(tmp_path)
+    before = (repo / "service.py").read_text(encoding="utf-8")
+    edits = [
+        {
+            "file": "service.py",
+            "expected_original_text": "amount",
+            "replacement_text": "total",
+        },
+        {
+            "file": "service.py",
+            "expected_original_text": "not present",
+            "replacement_text": "replacement",
+        },
+    ]
+
+    with pytest.raises(GitError, match="Precondition mismatch"):
+        apply_edits_to_working_tree(repo, edits)
+
+    assert (repo / "service.py").read_text(encoding="utf-8") == before
+
+
+def test_apply_edits_preserves_multiple_edits_to_one_file(tmp_path: Path) -> None:
+    repo = _make_repo(tmp_path)
+    edits = [
+        {
+            "file": "service.py",
+            "expected_original_text": "'/v1/pay'",
+            "replacement_text": "'/v2/pay'",
+        },
+        {
+            "file": "service.py",
+            "expected_original_text": "'amount': amount",
+            "replacement_text": "'total': amount",
+        },
+    ]
+
+    modified = apply_edits_to_working_tree(repo, edits)
+
+    assert modified == ["service.py"]
+    content = (repo / "service.py").read_text(encoding="utf-8")
+    assert "'/v2/pay'" in content
+    assert "'total': amount" in content
+
+
+@pytest.mark.parametrize(
+    "unsafe_path", ("../outside.py", ".git/config", ".env.local", "C:\\outside.py")
+)
+def test_apply_edits_rejects_unsafe_paths(
+    tmp_path: Path, unsafe_path: str
+) -> None:
+    repo = _make_repo(tmp_path)
+    with pytest.raises(GitError, match="unsafe repository path|outside the repository"):
+        apply_edits_to_working_tree(
+            repo,
+            [{"file": unsafe_path, "expected_original_text": "a", "replacement_text": "b"}],
+        )
+
+
 def test_apply_edits_missing_file_raises(tmp_path: Path) -> None:
     repo = _make_repo(tmp_path)
     edits = [
@@ -131,6 +191,32 @@ def test_apply_edits_missing_file_raises(tmp_path: Path) -> None:
     ]
     with pytest.raises(GitError, match="File not found"):
         apply_edits_to_working_tree(repo, edits)
+
+
+def test_apply_edits_rejects_symlink_escape(tmp_path: Path) -> None:
+    repo = _make_repo(tmp_path)
+    outside = tmp_path / "outside.py"
+    outside.write_text("value = 'old'", encoding="utf-8")
+    try:
+        (repo / "linked.py").symlink_to(outside)
+    except (OSError, NotImplementedError):
+        pytest.skip("Symlinks are unavailable on this Windows environment")
+
+    with pytest.raises(GitError, match="outside the repository"):
+        apply_edits_to_working_tree(
+            repo,
+            [{"file": "linked.py", "expected_original_text": "old", "replacement_text": "new"}],
+        )
+    assert outside.read_text(encoding="utf-8") == "value = 'old'"
+
+
+def test_working_tree_is_clean_detects_untracked_files(tmp_path: Path) -> None:
+    repo = tmp_path / "git-repo"
+    repo.mkdir()
+    subprocess.run(["git", "init", str(repo)], check=True, capture_output=True)
+    assert working_tree_is_clean(repo)
+    (repo / "untracked.txt").write_text("data", encoding="utf-8")
+    assert not working_tree_is_clean(repo)
 
 
 # ---------------------------------------------------------------------------

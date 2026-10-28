@@ -80,6 +80,8 @@ $env:OPENTRACE_WORKSPACE = "."
 uvicorn opentrace.main:app --port 8000
 ```
 
+The dashboard API is intended for local use and accepts loopback hostnames only. Do not expose it directly to a network.
+
 ### Run the Dashboard with Docker Compose
 
 With Docker Engine or Docker Desktop and Compose v2 installed:
@@ -247,7 +249,7 @@ OpenTrace can be invoked via the `opentrace` binary or directly via Python with 
 | `evaluate` | `[--workspace <dir>]` | Writes a deterministic per-run report for retrieval, generation, and validation evidence. |
 | `apply` | `[--workspace <dir>] [--yes]` | Applies validated patches directly to source files on disk. |
 | `status` | `[--workspace <dir>]` | Shows current workspace state, analysis results, and migration status. |
-| `pr` | `[--workspace <dir>] [--dry-run] [--base-branch <branch>]` | Creates a verified draft GitHub Pull Request with audit evidence. |
+| `pr` | `[--workspace <dir>] [--dry-run] [--base-branch <branch>]` | Creates a verified draft GitHub Pull Request with audit evidence; a real PR requires a clean working tree. |
 
 ### Live AI Provider Setup
 

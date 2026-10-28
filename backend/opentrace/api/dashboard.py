@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
+from threading import Lock
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
@@ -13,6 +16,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 router = APIRouter(prefix="/api", tags=["dashboard"])
+_COMMAND_OUTPUT_LOCK = Lock()
 
 from opentrace.projects.registry import get_registry
 from opentrace.reporting.html_report import generate_html_report
@@ -256,9 +260,8 @@ async def post_migrate(req: MigrateRequest) -> JSONResponse:
         # Reuse the CLI function but capture workspace state after.
         ws = _workspace()
         # run_migrate writes migration-plan.json, then we read it back.
-        import io, sys, contextlib
         buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
+        with _COMMAND_OUTPUT_LOCK, contextlib.redirect_stdout(buf):
             _rm(ws, req.policy, ai_enabled=False)
 
         plan = _read_json(_state_dir() / "migration-plan.json")
@@ -280,9 +283,8 @@ async def post_validate() -> JSONResponse:
     def _run() -> dict:
         from opentrace.cli.commands.validate import run_validate as _rv
         ws = _workspace()
-        import io, contextlib
         buf = io.StringIO()
-        with contextlib.redirect_stdout(buf):
+        with _COMMAND_OUTPUT_LOCK, contextlib.redirect_stdout(buf):
             _rv(ws, timeout=60)
         result = _read_json(_state_dir() / "validation-result.json")
         return result or {}
@@ -306,26 +308,18 @@ class PRRequest(BaseModel):
 @router.post("/pr")
 async def post_pr(req: PRRequest) -> JSONResponse:
     def _run() -> dict:
-        import os
         ws = _workspace()
-        # Set token for this thread only.
-        token_was = os.environ.get("GITHUB_TOKEN", "")
-        if req.github_token:
-            os.environ["GITHUB_TOKEN"] = req.github_token
-        try:
-            from opentrace.cli.commands.pr import run_pr as _rpr
-            import io, contextlib
-            buf = io.StringIO()
-            with contextlib.redirect_stdout(buf):
-                _rpr(ws, dry_run=req.dry_run, base_branch=req.base_branch)
-            pr_audit = _read_json(_state_dir() / "pr-audit.json")
-            return {"output": buf.getvalue(), "pr_audit": pr_audit}
-        finally:
-            if req.github_token:
-                if token_was:
-                    os.environ["GITHUB_TOKEN"] = token_was
-                else:
-                    os.environ.pop("GITHUB_TOKEN", None)
+        from opentrace.cli.commands.pr import run_pr as _rpr
+        buf = io.StringIO()
+        with _COMMAND_OUTPUT_LOCK, contextlib.redirect_stdout(buf):
+            _rpr(
+                ws,
+                dry_run=req.dry_run,
+                base_branch=req.base_branch,
+                github_token=req.github_token,
+            )
+        pr_audit = _read_json(_state_dir() / "pr-audit.json")
+        return {"output": buf.getvalue(), "pr_audit": pr_audit}
 
     try:
         result = await asyncio.to_thread(_run)
@@ -710,46 +704,6 @@ Read-Host "Press Enter to finish"
         media_type="text/plain",
         headers={"Content-Disposition": "attachment; filename=install-opentrace.ps1"}
     )
-
-
-# ─────────────────────────────────────────────
-# POST /api/terminal/run
-# ─────────────────────────────────────────────
-
-class TerminalRunRequest(BaseModel):
-    command: str
-
-@router.post("/terminal/run")
-async def post_terminal_run(req: TerminalRunRequest) -> JSONResponse:
-    import subprocess
-    import sys
-
-    cmd_str = req.command.strip()
-    if not (cmd_str.startswith("opentrace ") or cmd_str == "opentrace" or cmd_str.startswith("opentrace ") or cmd_str == "opentrace" or cmd_str.startswith("pytest ")):
-        raise HTTPException(status_code=400, detail="Only 'opentrace', 'opentrace', and 'pytest' commands are supported.")
-
-    def _exec():
-        proc = subprocess.run(
-            ["powershell", "-NoProfile", "-Command", cmd_str],
-            cwd=str(_workspace_dir()),
-            capture_output=True,
-            text=True,
-            timeout=60,
-        )
-        return {
-            "exit_code": proc.returncode,
-            "stdout": proc.stdout,
-            "stderr": proc.stderr,
-            "command": cmd_str,
-        }
-
-    try:
-        result = await asyncio.to_thread(_exec)
-        return JSONResponse(result)
-    except subprocess.TimeoutExpired:
-        return JSONResponse({"exit_code": -1, "stdout": "", "stderr": "Command timed out after 60s", "command": cmd_str})
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
 # ─────────────────────────────────────────────

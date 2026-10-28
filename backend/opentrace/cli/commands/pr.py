@@ -20,12 +20,17 @@ from opentrace.github.git import (
     GitError, apply_edits_to_working_tree, create_branch,
     current_branch, delete_local_branch, find_git_root,
     get_remote_url, parse_github_owner_repo, push_branch,
-    restore_files, stage_and_commit,
+    restore_files, stage_and_commit, working_tree_is_clean,
 )
 from opentrace.github.pr_template import build_pr_body, build_pr_title
 
 
-def run_pr(workspace: Path, dry_run: bool, base_branch: str | None) -> None:
+def run_pr(
+    workspace: Path,
+    dry_run: bool,
+    base_branch: str | None,
+    github_token: str | None = None,
+) -> None:
     """Create a draft GitHub PR from the current .opentrace/ migration plan."""
 
     # --- Load workspace artifacts ---
@@ -75,6 +80,12 @@ def run_pr(workspace: Path, dry_run: bool, base_branch: str | None) -> None:
         sys.exit(1)
 
     print_info(f"Git root : {git_root}")
+    if not working_tree_is_clean(git_root):
+        print_error(
+            "Working tree has uncommitted or untracked changes; "
+            "commit or stash them before creating a PR."
+        )
+        sys.exit(1)
 
     # --- Parse GitHub owner/repo ---
     try:
@@ -89,7 +100,8 @@ def run_pr(workspace: Path, dry_run: bool, base_branch: str | None) -> None:
 
     # --- GitHub auth ---
     try:
-        gh = GitHubClient.from_env()
+        token = github_token.strip() if github_token else ""
+        gh = GitHubClient(token) if token else GitHubClient.from_env()
     except GitHubClientError as exc:
         print_error(str(exc))
         print_info("Set your token: $env:GITHUB_TOKEN='ghp_...'")
